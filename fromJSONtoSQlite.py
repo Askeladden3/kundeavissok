@@ -1,0 +1,157 @@
+import os
+import json
+import base64
+import time
+from datetime import datetime
+import sqlite3
+
+
+def JSONtoSQlite(UKE):
+    '''
+    try: #Lager en ny db-fil dersom den ikke eksisterer fra før
+        f = open(f'kundeavis_{UKE}.db', 'x', encoding='utf-8')
+        f.close()
+    except:
+        pass
+    '''
+
+    db_file = f'kundeavis_{UKE}.db'
+
+    def EXECUTE_TABLES(item, table_name):
+        år = 2025
+        dato = datetime.strptime(f'{år} {UKE} 1', '%G %V %u').date()
+
+        if table_name == 'kroner_off_deals':
+            table = ['''
+                INSERT INTO kroner_off_deals (name, amount_subtracted, store, avis_date, page_number)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (item['name'], item['amount_subtracted'], item['store'], dato, item['page_number'])]
+        elif table_name == 'multibuy_for_price_deals':
+            table = ['''
+                INSERT INTO multibuy_for_price_deals (name, amount_of_wares, set_price, store, avis_date, page_number)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (item['name'], item['amount_of_wares'], item['set_price'], item['store'], dato, item['page_number'])]
+
+        elif table_name == 'percentage_deals':
+            table = ['''
+                INSERT INTO percentage_deals (name, percentage_off, store, avis_date, page_number)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (item['name'], item['percentage_off'], item['store'], dato, item['page_number'])]
+
+        elif table_name =='price_deals':
+            table = ['''
+                INSERT INTO price_deals (name, total_price, price_per_unit, total_mass, store, unit, avis_date, page_number)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (item['name'], item['total_price'], item['price_per_unit'], item['total_mass'], item['store'], item['unit'], dato, item['page_number'])]
+
+        elif table_name == 'three_for_two_deals':
+            table = ['''
+                INSERT INTO three_for_two_deals (name, store, avis_date, page_number)
+                VALUES (?, ?, ?, ?)
+            ''', (item['name'], item['store'], dato, item['page_number'])]
+
+
+        return table
+    
+    def CREATE_SEARCH_TABLES():
+        SQstrs = ["CREATE VIRTUAL TABLE IF NOT EXISTS price_deals_fts USING fts5(name, content='price_deals', content_rowid='id');",
+                  "INSERT INTO price_deals_fts(rowid, name) SELECT id, name FROM price_deals;",
+                  "CREATE VIRTUAL TABLE IF NOT EXISTS kroner_off_deals_fts USING fts5(name, content='kroner_off_deals', content_rowid='id');",
+                  "INSERT INTO kroner_off_deals_fts(rowid, name) SELECT id, name FROM kroner_off_deals;",
+                  "CREATE VIRTUAL TABLE IF NOT EXISTS multibuy_for_price_deals_fts USING fts5(name, content='multibuy_for_price_deals', content_rowid='id');",
+                  "INSERT INTO multibuy_for_price_deals_fts(rowid, name) SELECT id, name FROM multibuy_for_price_deals;",
+                  "CREATE VIRTUAL TABLE IF NOT EXISTS percentage_deals_fts USING fts5(name, content='percentage_deals', content_rowid='id');",
+                  "INSERT INTO percentage_deals_fts(rowid, name) SELECT id, name FROM percentage_deals;",
+                  "CREATE VIRTUAL TABLE IF NOT EXISTS three_for_two_deals_fts USING fts5(name, content='three_for_two_deals', content_rowid='id');",
+                  "INSERT INTO three_for_two_deals_fts(rowid, name) SELECT id, name FROM three_for_two_deals;"]
+
+
+        for SQstring in SQstrs:
+            print(SQstring)
+            cursor.execute(SQstring)
+            conn.commit()
+
+
+
+
+    directory_path = f'results_JSON\\{UKE}'
+
+    for entry in os.scandir(directory_path):
+        if entry.is_file():
+            json_file = entry.path
+            table_name = json_file.split('\\')[2][:-5]
+
+            conn = sqlite3.connect(db_file)
+            cursor = conn.cursor()
+
+            with open(json_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            CREATE_TABLES = {
+                'kroner_off_deals' : f'''
+                CREATE TABLE IF NOT EXISTS {table_name} (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT,
+                    amount_subtracted INTEGER NOT NULL,
+                    store TEXT NOT NULL,
+                    avis_date DATE,
+                    page_number INTEGER
+                    )''',
+
+                'multibuy_for_price_deals' : f'''
+                CREATE TABLE IF NOT EXISTS {table_name} (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT,
+                    amount_of_wares INTEGER NOT NULL,
+                    set_price DECIMAL(10,3) NOT NULL,
+                    store TEXT NOT NULL,
+                    avis_date DATE,
+                    page_number INTEGER
+                    )''',
+
+                'percentage_deals' : f'''
+                CREATE TABLE IF NOT EXISTS {table_name} (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT,
+                    percentage_off INTEGER NOT NULL,
+                    store TEXT NOT NULL,
+                    avis_date DATE,
+                    page_number INTEGER
+                    )''',
+
+                'price_deals' : f'''
+                CREATE TABLE IF NOT EXISTS {table_name} (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT,
+                    total_price DECIMAL (10,2),
+                    price_per_unit DECIMAL (10,2),
+                    total_mass DECIMAL (8,3),
+                    store TEXT NOT NULL,
+                    unit TEXT DEFAULT 'kg',
+                    avis_date DATE,
+                    page_number INTEGER
+                    )''',
+                    
+                'three_for_two_deals' : f'''
+                CREATE TABLE IF NOT EXISTS {table_name} (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT,
+                    store TEXT NOT NULL,
+                    avis_date DATE,
+                    page_number INTEGER
+                    )'''}
+
+
+
+            cursor.execute(CREATE_TABLES[table_name])
+            conn.commit()
+
+
+            for item in data:
+
+                sqlite_command, sqlite_data = EXECUTE_TABLES(item, table_name)
+                cursor.execute(sqlite_command, sqlite_data)
+
+            conn.commit()
+
+    CREATE_SEARCH_TABLES()
