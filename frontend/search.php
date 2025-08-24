@@ -1,0 +1,152 @@
+<?php
+
+/**
+ * search.php
+ * This script handles searching for food items in a SQLite database.
+ * It sanitizes inputs and returns results in JSON format.
+ */
+
+// --- Error Reporting (for development) ---
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// --- Configuration & Setup ---
+header('Content-Type: application/json');
+$databaseFile = __DIR__ . "/kundeavis_35.db"; // Assumes DB is in the same directory
+
+// --- Database Connection ---
+if (!file_exists($databaseFile)) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Database file not found.']);
+    exit();
+}
+try {
+    $conn = new PDO('sqlite:' . $databaseFile);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Database connection failed: ' . $e->getMessage()]);
+    exit();
+}
+
+// --- Input Processing ---
+$query = isset($_GET['q']) ? trim($_GET['q']) : '';
+$dealType = isset($_GET['type']) ? trim($_GET['type']) : '';
+$storesFilter = isset($_GET['stores']) ? trim($_GET['stores']) : '';
+
+if (empty($query)) {
+    echo json_encode([]);
+    exit();
+}
+
+$searchParam = "%" . $query . "%";
+$sql = '';
+$params = [];
+
+// --- Store Filtering Logic (Corrected) ---
+$storeClause = '';
+$storeParams = [];
+if (!empty($storesFilter)) {
+    $storeList = array_filter(array_map('trim', explode(',', $storesFilter)), function($v){ return $v !== ''; });
+    if (!empty($storeList)) {
+        $placeholders = implode(',', array_fill(0, count($storeList), '?'));
+        $storeClause = " AND store IN ($placeholders)";
+        $storeParams = array_values($storeList);
+    }
+}
+
+// --- Query Building ---
+try {
+    if ($dealType === 'pris-salg') {
+        // NOTE: removed extra outer parentheses around each SELECT to avoid syntax issues.
+        $sql = "
+            SELECT 
+                id, name, percentage_off, 
+                NULL as total_price, NULL as price_per_unit, NULL as total_mass, NULL as unit,
+                store, avis_date, page_number, 'percentage' as deal_type, 1 as deal_priority
+            FROM percentage_deals 
+            WHERE name LIKE ? {$storeClause}
+
+            UNION ALL
+
+            SELECT 
+                id, name, NULL as percentage_off, 
+                total_price, price_per_unit, total_mass, unit,
+                store, avis_date, page_number, 'price' as deal_type, 2 as deal_priority
+            FROM price_deals 
+            WHERE name LIKE ? {$storeClause}
+
+            ORDER BY deal_priority ASC, total_price ASC
+        ";
+
+        // Build params in the exact same order as the question marks appear in SQL:
+        // first SELECT: 1 param for name + N params for stores (if present)
+        // second SELECT: 1 param for name + N params for stores (if present)
+        $params = [];
+        // first select params
+        $params[] = $searchParam;
+        if (!empty($storeParams)) { $params = array_merge($params, $storeParams); }
+        // second select params
+        $params[] = $searchParam;
+        if (!empty($storeParams)) { $params = array_merge($params, $storeParams); }
+
+    } elseif ($dealType === 'annet type salg') {
+        $sql = "
+            SELECT 
+                id, name, amount_subtracted, NULL as amount_of_wares, NULL as set_price, 
+                store, avis_date, page_number, 'kroner_off' as deal_type
+            FROM kroner_off_deals 
+            WHERE name LIKE ? {$storeClause}
+
+            UNION ALL
+
+            SELECT 
+                id, name, NULL as amount_subtracted, amount_of_wares, set_price, 
+                store, avis_date, page_number, 'multibuy' as deal_type
+            FROM multibuy_for_price_deals 
+            WHERE name LIKE ? {$storeClause}
+
+            UNION ALL
+
+            SELECT 
+                id, name, NULL as amount_subtracted, NULL as amount_of_wares, NULL as set_price, 
+                store, avis_date, page_number, 'three_for_two' as deal_type
+            FROM three_for_two_deals 
+            WHERE name LIKE ? {$storeClause}
+        ";
+
+        // params: for each SELECT -> name + store params
+        $params = [];
+        // first
+        $params[] = $searchParam;
+        if (!empty($storeParams)) { $params = array_merge($params, $storeParams); }
+        // second
+        $params[] = $searchParam;
+        if (!empty($storeParams)) { $params = array_merge($params, $storeParams); }
+        // third
+        $params[] = $searchParam;
+        if (!empty($storeParams)) { $params = array_merge($params, $storeParams); }
+
+    } else {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid deal type specified.']);
+        exit();
+    }
+
+    // --- Execution ---
+    $stmt = $conn->prepare($sql);
+    $stmt->execute($params);
+    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    echo json_encode($results);
+
+} catch (Exception $e) {
+    // For debugging: return a helpful error message (in production you might hide details)
+    http_response_code(500);
+    echo json_encode(['error' => 'Search failed: ' . $e->getMessage()]);
+    exit();
+} finally {
+    $conn = null;
+}
+
+?>

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <title>Food Price Search</title>
+  <style>
+    /* General Styling */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: #333;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 {
+      text-align: center; color: white; font-size: 2.5rem;
+      margin-bottom: 1rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      animation: fadeInDown 0.8s ease-out;
+    }
+    h2 {
+      text-align: center; color: rgb(189, 189, 189); font-size: 1.7rem;
+      margin-bottom: 0.76rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      animation: fadeInDown 0.8s ease-out;
+    }
+    h3 {
+      text-align: center; color: rgb(189, 189, 189); font-size: 1rem;
+      margin-bottom: 0.76rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      animation: fadeInDown 0.8s ease-out;
+    }
+
+    /* Search Container & Box */
+    .search-container {
+      background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
+      border-radius: 20px; padding: 2rem; margin-bottom: 2rem;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      animation: fadeInUp 0.8s ease-out 0.2s both;
+      position: relative; /* Added for stacking context */
+      z-index: 10; /* Added to ensure search container stays above results */
+    }
+    .search-box {
+      display: flex; gap: 1rem; max-width: 850px; margin: 0 auto;
+      flex-wrap: wrap; justify-content: center; align-items: center;
+    }
+
+    /* Form Elements */
+    #search, #dealType, .store-filter-btn {
+      padding: 1rem 1.5rem; border: 2px solid #e0e0e0; border-radius: 50px;
+      font-size: 1.1rem; background: white; transition: all 0.3s ease;
+    }
+    #search { flex: 1; min-width: 250px; outline: none; }
+    #dealType { cursor: pointer; min-width: 150px; appearance: none; }
+    #search:focus, #dealType:focus, .store-filter-btn:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Store Filter Dropdown - Fixed positioning */
+    .store-filter-container {
+      position: relative; 
+      min-width: 180px;
+    }
+    .store-filter-btn { 
+      width: 100%; 
+      cursor: pointer; 
+      text-align: left; 
+      position: relative;
+    }
+    .store-filter-dropdown {
+      display: none;
+      position: absolute;
+      top: 110%;
+      left: 0;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      z-index: 1000; /* Reduced but still high enough */
+      padding: 1rem;
+      width: 220px;
+    }
+    .store-filter-dropdown label {
+      display: block; padding: 0.5rem; cursor: pointer;
+      border-radius: 8px; transition: background-color 0.2s ease;
+    }
+    .store-filter-dropdown label:hover { background-color: #f0f2f5; }
+    .store-filter-dropdown input { margin-right: 0.8rem; }
+
+    /* Search Button */
+    .search-btn {
+      padding: 1rem 2rem; background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white; border: none; border-radius: 50px; font-size: 1.1rem;
+      font-weight: 600; cursor: pointer; transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    .search-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); }
+    .search-btn:active { transform: translateY(-1px); }
+
+    /* Results */
+    .results-container {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem; animation: fadeInUp 0.8s ease-out 0.4s both;
+      position: relative;
+      z-index: 1; /* Lower than search container */
+    }
+    .food-card {
+      background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
+      border-radius: 15px; padding: 1.5rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      transition: all 0.3s ease; border: 2px solid transparent;
+      animation: slideInUp 0.5s ease-out; position: relative; overflow: hidden;
+    }
+    .food-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.15); border-color: rgba(102, 126, 234, 0.3); }
+    .food-name { font-size: 1.3rem; font-weight: 700; color: #333; margin-bottom: 0.5rem; line-height: 1.3; }
+    .price-section { margin: 1rem 0; }
+    .total-price { font-size: 1.8rem; font-weight: 800; color: #2d5016; margin-bottom: 0.3rem; }
+    .price-per-kg { font-size: 1rem; color: #666; font-weight: 500; }
+    .store-info { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee; }
+    .store-name { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 0.4rem 1rem; border-radius: 20px; font-weight: 600; font-size: 0.9rem; }
+    .date-info { color: #888; font-size: 0.85rem; text-align: right; }
+    .deal-info { background: #f8f9fa; padding: 0.5rem 1rem; border-radius: 10px; margin: 0.8rem 0; color: #555; font-weight: 500; text-align: center; }
+    .loading-message, .no-results, .initial-message {
+      grid-column: 1 / -1; text-align: center; padding: 3rem;
+      background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
+      border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); color: #666;
+    }
+    .loading-message { font-style: italic; font-size: 1.1rem; }
+    .no-results { font-size: 1.2rem; }
+    .initial-message { font-size: 1.3rem; font-weight: 300; padding: 4rem 2rem; }
+
+    /* Animations */
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      body { padding: 10px; }
+      h1 { font-size: 2rem; margin-bottom: 1.5rem; }
+      .search-container { padding: 1.5rem; border-radius: 15px; }
+      .search-box { flex-direction: column; align-items: stretch; }
+      #search, .store-filter-container, #dealType { min-width: auto; margin-bottom: 1rem; }
+      .results-container { grid-template-columns: 1fr; gap: 1rem; }
+      .food-card { padding: 1.2rem; }
+    }
+  </style>
+  <script>
+    async function searchFood() {
+      const query = document.getElementById("search").value.trim();
+      const dealType = document.getElementById("dealType").value;
+      const checkedStores = document.querySelectorAll('.store-filter-dropdown input[type="checkbox"]:checked');
+      const selectedStores = Array.from(checkedStores).map(checkbox => checkbox.value);
+      const resultsContainer = document.querySelector(".results-container");
+      
+      if (!query) {
+        resultsContainer.innerHTML = '<div class="initial-message">Skriv inn en matvare for å søke</div>';
+        return;
+      }
+      
+      resultsContainer.innerHTML = '<div class="loading-message">Søker...</div>';
+      
+      try {
+        let fetchUrl = `search.php?q=${encodeURIComponent(query)}&type=${encodeURIComponent(dealType)}`;
+        if (selectedStores.length > 0) {
+            fetchUrl += `&stores=${encodeURIComponent(selectedStores.join(','))}`;
+        }
+
+        const response = await fetch(fetchUrl);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        
+        if (data.error) { throw new Error(data.error); }
+        if (data.length === 0) {
+          resultsContainer.innerHTML = `<div class="no-results">Ingen resultater funnet for "${query}"</div>`;
+          return;
+        }
+        
+        resultsContainer.innerHTML = "";
+        
+        data.forEach((item, index) => {
+          const card = document.createElement('div');
+          card.className = 'food-card';
+          card.style.animationDelay = `${index * 0.1}s`;
+          
+          let cardContent = '';
+
+          if (item.deal_type === 'price' || item.deal_type === 'percentage') {
+              let dealBadge = '';
+              if(item.deal_type === 'percentage' && item.percentage_off) {
+                  dealBadge = `<div class="deal-info">🏷️ ${item.percentage_off}% rabatt</div>`;
+              }
+              const totalPrice = (item.total_price && !isNaN(item.total_price)) ? `kr ${parseFloat(item.total_price).toFixed(2)}` : (item.deal_type === 'percentage' ? 'Prosent-salg' : '');
+              const pricePerUnit = (item.price_per_unit && !isNaN(item.price_per_unit)) ? `kr ${parseFloat(item.price_per_unit).toFixed(2)} per ${item.unit || 'enhet'}` : '';
+              const massInfo = (item.total_mass && !isNaN(item.total_mass)) ? `📦 ${item.total_mass} ${item.unit || ''}` : '';
+              cardContent = `<div class="food-name">${item.name || ''}</div>${dealBadge}<div class="price-section"><div class="total-price">${totalPrice}</div><div class="price-per-kg">${pricePerUnit}</div></div><div class="deal-info">${massInfo}</div>`;
+          } else {
+              let dealInfo = '';
+              switch(item.deal_type) {
+                case 'kroner_off': dealInfo = `<div class="deal-info">-${item.amount_subtracted}kr 💰</div>`; break;
+                case 'multibuy': dealInfo = `<div class="deal-info">🛒 ${item.amount_of_wares} stk for kr ${parseFloat(item.set_price).toFixed(0)}</div>`; break;
+                case 'three_for_two': dealInfo = `<div class="deal-info">🎯 Kjøp 3, betal for 2</div>`; break;
+              }
+              cardContent = `<div class="food-name">${item.name || ''}</div>${dealInfo}`;
+          }
+
+          card.innerHTML = `${cardContent}<div class="store-info"><div class="store-name">${item.store || ''}</div><div class="date-info">${item.avis_date || ''}<br>Side: ${item.page_number || ''}</div></div>`;
+          resultsContainer.appendChild(card);
+        // Create Add to Cart button
+        const addBtn = document.createElement('button');
+        addBtn.textContent = '🛒 Legg til i kurv';
+        addBtn.style.marginTop = '10px';
+        addBtn.style.padding = '0.5rem 1rem';
+        addBtn.style.border = 'none';
+        addBtn.style.borderRadius = '8px';
+        addBtn.style.cursor = 'pointer';
+        addBtn.style.background = '#667eea';
+        addBtn.style.color = 'white';
+        addBtn.onclick = () => addToCart(item);
+        card.appendChild(addBtn);
+
+        });
+      } catch (error) {
+        console.error('Search error:', error);
+        resultsContainer.innerHTML = `<div class="no-results">Feil ved søking: ${error.message}. Prøv igjen senere.</div>`;
+      }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      const storeFilterBtn = document.querySelector('.store-filter-btn');
+      const storeFilterDropdown = document.querySelector('.store-filter-dropdown');
+      // --- "Vis alle butikker" logikk ---
+      const selectAllCheckbox = document.getElementById('select-all-stores');
+      const storeCheckboxes = document.querySelectorAll('.store-filter-dropdown input[type="checkbox"]:not(#select-all-stores)');
+
+      if (selectAllCheckbox) {
+          selectAllCheckbox.addEventListener('change', function () {
+              storeCheckboxes.forEach(cb => { cb.checked = selectAllCheckbox.checked; });
+          });
+      }
+
+
+      // --- FIX for dropdown ---
+      // Toggle dropdown on button click and stop the event from reaching the document
+      storeFilterBtn.addEventListener('click', (event) => {
+          event.stopPropagation(); 
+          storeFilterDropdown.style.display = storeFilterDropdown.style.display === 'block' ? 'none' : 'block';
+      });
+
+      // Close dropdown if clicking anywhere else on the page
+      document.addEventListener('click', () => {
+          storeFilterDropdown.style.display = 'none';
+      });
+
+      // Prevent dropdown from closing when clicking inside it
+      storeFilterDropdown.addEventListener('click', (event) => {
+          event.stopPropagation();
+      });
+      // --- END FIX ---
+
+      document.getElementById('search').addEventListener('keypress', (e) => { if (e.key === 'Enter') searchFood(); });
+      document.getElementById('search').addEventListener('input', (e) => { if (!e.target.value.trim()) document.querySelector('.results-container').innerHTML = '<div class="initial-message">Skriv inn en matvare for å søke</div>'; });
+    });
+    // Save item to localStorage cart
+function addToCart(item) {
+  let cart = JSON.parse(localStorage.getItem('cart')) || [];
+  
+  // Avoid duplicates
+  if (!cart.find(i => i.name === item.name && i.store === item.store)) {
+    cart.push(item);
+    localStorage.setItem('cart', JSON.stringify(cart));
+    alert(`${item.name} lagt til i kurven!`);
+    renderCart();
+  } else {
+    alert(`${item.name} er allerede i kurven.`);
+  }
+}
+
+// Remove item from cart
+function removeFromCart(index) {
+  let cart = JSON.parse(localStorage.getItem('cart')) || [];
+  cart.splice(index, 1);
+  localStorage.setItem('cart', JSON.stringify(cart));
+  renderCart();
+}
+
+// Render cart in a floating panel
+function renderCart() {
+  let cart = JSON.parse(localStorage.getItem('cart')) || [];
+  let cartContainer = document.getElementById('cart-container');
+  if (!cartContainer) {
+    cartContainer = document.createElement('div');
+    cartContainer.id = 'cart-container';
+    cartContainer.style.position = 'fixed';
+    cartContainer.style.top = '20px';
+    cartContainer.style.right = '20px';
+    cartContainer.style.width = '250px';
+    cartContainer.style.maxHeight = '80vh';
+    cartContainer.style.overflowY = 'auto';
+    cartContainer.style.background = 'rgba(255,255,255,0.95)';
+    cartContainer.style.backdropFilter = 'blur(10px)';
+    cartContainer.style.borderRadius = '10px';
+    cartContainer.style.padding = '1rem';
+    cartContainer.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
+    document.body.appendChild(cartContainer);
+  }
+
+  cartContainer.innerHTML = `<h3>🛒 Kurv (${cart.length})</h3>`;
+  if (cart.length === 0) {
+    cartContainer.innerHTML += '<p>Kurven er tom</p>';
+  } else {
+    cart.forEach((item, index) => {
+      const div = document.createElement('div');
+      div.style.borderBottom = '1px solid #eee';
+      div.style.marginBottom = '5px';
+      div.style.paddingBottom = '5px';
+      div.innerHTML = `
+        <strong>${item.name}</strong><br>
+        <small>${item.store || ''}</small>
+        <button style="float:right;background:#ff6b6b;color:white;border:none;border-radius:5px;padding:2px 5px;cursor:pointer;" onclick="removeFromCart(${index})">❌</button>
+      `;
+      cartContainer.appendChild(div);
+    });
+  }
+}
+
+  document.addEventListener('DOMContentLoaded', renderCart);
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1>Kundeavis-søk (Uke 35)</h1>
+    <h2>Utilgjengelige Butikker: </h2>
+    <h3>Rema 1000, Bunnpris, Kiwi</h3>
+    <div class="search-container">
+      <div class="search-box">
+        <div class="store-filter-container">
+    <button class="store-filter-btn">Velg Butikker</button>
+    <div class="store-filter-dropdown">
+        <label><input type="checkbox" id="select-all-stores"> Vis alle butikker</label>
+        <hr>
+        <label><input type="checkbox" value="extra"> Coop Extra</label>
+        <label><input type="checkbox" value="meny"> Meny</label>
+        <label><input type="checkbox" value="coop-prix"> Coop Prix</label>
+        <label><input type="checkbox" value="joker"> Joker</label>
+        <label><input type="checkbox" value="spar"> Spar</label>
+        <label><input type="checkbox" value="coop-mega"> Coop Mega</label>
+        <label><input type="checkbox" value="naerbutikken"> Nærbutikken</label>
+        <label><input type="checkbox" value="coop-marked"> Coop Marked</label>
+        <label><input type="checkbox" value="obs"> Obs</label>
+    </div>
+        </div>
+        <select id="dealType">
+          <option value="pris-salg">Standard Salg</option>
+          <option value="annet type salg">Annet type salg</option>
+        </select>
+        <input type="text" id="search" placeholder="Søk etter matvare...">
+        <button class="search-btn" onclick="searchFood()">🔍 Søk</button>
+      </div>
+    </div>
+    <div class="results-container">
+      <div class="initial-message">Skriv inn en matvare for å søke</div>
+    </div>
+  </div>
+</body>
+</html>
