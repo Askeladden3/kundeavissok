@@ -1,55 +1,13 @@
 stages:
-  - run
-  - store
+  - test
 
-default:
-  image: python:3.11
-  before_script:
-    - pip install --upgrade pip
-    - pip install -r requirements.txt
-
-
-check_api:
-  stage: run
+check_api_var:
+  stage: test
   script:
-    - echo "length; ${#API_KEY}"
-  only:
-    - schedules
-
-# 1. Run the weekly script
-weekly_job:
-  stage: run
-  script:
-    - echo "Running weekly job..."
-    - python main.py
-  only:
-    - schedules
-
-# 2. Save the database file to the 'databases' branch
-save_database:
-  stage: store
-  needs: ["weekly_job"]
-  script:
-    - echo "Saving database file to 'databases' branch..."
-
-    # Configure git identity
-    - git config --global user.email "ci-bot@stud.idi.ntnu.no"
-    - git config --global user.name "CI Bot"
-
-    # Clone repo with token authentication
-    - git clone https://oauth2:${GITLAB_TOKEN}@gitlab.stud.idi.ntnu.no/kundeavissok.git repo
-    - cd repo
-
-    # Switch/create 'databases' branch
-    - git checkout databases || git checkout -b databases
-
-    # Copy the database file with ISO week naming
-    - WEEK=$(date +%V)
-    - cp ../kundeavis_${WEEK}.db ./kundeavis_${WEEK}.db
-
-    # Commit + push
-    - git add kundeavis_${WEEK}.db
-    - git commit -m "Add weekly database for week ${WEEK}"
-    - git push origin databases
+    - echo "🔎 Checking API_KEY..."
+    - if [ -z "$API_KEY" ]; then echo "❌ API_KEY is not set"; exit 1; fi
+    - echo "✅ API_KEY exists in environment"
+    - echo "🔒 Length of API_KEY: ${#API_KEY}"
+    - echo "🔒 First 4 characters of API_KEY: ${API_KEY:0:4}**** (rest hidden)"
   only:
     - schedules
