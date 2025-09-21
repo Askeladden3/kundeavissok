@@ -36,6 +36,11 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
     # https://aistudio.google.com/app/apikey
     API_KEY = os.getenv("GEMINI_API_KEY")
 
+    if not API_KEY:
+        sys.exit("❌ ERROR: API_KEY not found in environment variables!")
+    else:
+        print("✅ API_KEY is present (value hidden).")
+
     # Folder where your flyer images are stored (e.g., 'rema1000_20250809.jpg')
     IMAGE_INPUT_FOLDER = f"temp_output/bilder" 
     JSON_OUTPUT_FOLDER = "temp_output/results_JSON"
