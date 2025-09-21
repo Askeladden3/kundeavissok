@@ -6,16 +6,10 @@ from datetime import datetime
 import sqlite3
 
 
-def JSONtoSQlite(UKE):
-    '''
-    try: #Lager en ny db-fil dersom den ikke eksisterer fra før
-        f = open(f'kundeavis_{UKE}.db', 'x', encoding='utf-8')
-        f.close()
-    except:
-        pass
-    '''
 
-    db_file = f'kundeavis_{UKE}.db'
+def JSONtoSQlite(UKE):
+
+    db_file = f'temp_output\\databaser\\kundeavis_{UKE}.db'
 
     def EXECUTE_TABLES(item, table_name):
         år = 2025
@@ -86,6 +80,26 @@ def JSONtoSQlite(UKE):
 
             with open(json_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
+                unique_deals = {}
+                for vare in data:
+                #Denne løkken fjerner duplikatvarer fra JSON-filene
+                    navn = vare['name'].lower()
+
+                    if navn not in unique_deals:
+                        unique_deals[navn] = [vare]
+                    else:
+                        unique = True
+                        for enkelt_deal in unique_deals[navn]:
+                            if vare['store'] == enkelt_deal['store']:
+                                unique = False
+                                break
+                        if unique:
+                            unique_deals[navn].append(vare)
+
+                processed_data = []
+                for vare_kombo in unique_deals.values():
+                    for vare in vare_kombo:
+                        processed_data.append(vare)
 
             CREATE_TABLES = {
                 'kroner_off_deals' : f'''
@@ -147,7 +161,7 @@ def JSONtoSQlite(UKE):
             conn.commit()
 
 
-            for item in data:
+            for item in processed_data:
 
                 sqlite_command, sqlite_data = EXECUTE_TABLES(item, table_name)
                 cursor.execute(sqlite_command, sqlite_data)

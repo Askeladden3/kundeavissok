@@ -4,11 +4,12 @@ import base64
 import time
 import datetime
 from datetime import datetime
-import requests # Make sure to install this: pip install requests
+import requests
+import sys
 
 
 
-def Gemini_parser(BUTIKKER, UKE, write_mode = 'add'):
+def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
     '''Sender API-calls til Gemini Flash 2.5 for å ekstrahere matvarer fra kundeavisene
     
     Har to "moduser" for å lagre data ved:
@@ -17,6 +18,8 @@ def Gemini_parser(BUTIKKER, UKE, write_mode = 'add'):
     "replace" - SLETTER eksisterende JSON-filer og skaper nye med data som leses fra kundeaviser (standard)
 
     '''
+
+    current_date, år, UKE = DATO
 
     if write_mode == 'add':
         overwrite = False
@@ -29,16 +32,11 @@ def Gemini_parser(BUTIKKER, UKE, write_mode = 'add'):
     # --- CONFIGURATION ---
     # IMPORTANT: Get your API key from Google AI Studio and paste it here.
     # https://aistudio.google.com/app/apikey
-    API_KEY = 'API-NØKKEL HER'
+    API_KEY = os.environ['API_KEY']
 
     # Folder where your flyer images are stored (e.g., 'rema1000_20250809.jpg')
-    IMAGE_INPUT_FOLDER = f"kundeavis_data\\2025_{UKE}" 
-    JSON_OUTPUT_FOLDER = "results_JSON"
-
-
-    #tempButikkAlleredeLest = set(['extra','meny','coop-prix','joker','spar','coop-mega','naerbutikken','coop-marked','obs'])
-    #tempButikkSkalLeses11_08 = list(set(BUTIKKER).difference(tempButikkAlleredeLest))
-    #BUTIKKER = tempButikkSkalLeses11_08
+    IMAGE_INPUT_FOLDER = f"temp_output/kundeaviser/{år}_{UKE}" 
+    JSON_OUTPUT_FOLDER = "temp_output/results_JSON"
 
 
     # --- SCRIPT ---
@@ -159,15 +157,15 @@ def Gemini_parser(BUTIKKER, UKE, write_mode = 'add'):
 
 
         if not overwrite:
-            with open(f'results_JSON\\{UKE}\\kroner_off_deals.json', 'r', encoding='utf-8') as f:
+            with open(f'{JSON_OUTPUT_FOLDER}\\{UKE}\\kroner_off_deals.json', 'r', encoding='utf-8') as f:
                 kroner_off_deals = json.load(f)
-            with open(f'results_JSON\\{UKE}\\multibuy_for_price_deals.json', 'r', encoding='utf-8') as f:
+            with open(f'{JSON_OUTPUT_FOLDER}\\{UKE}\\multibuy_for_price_deals.json', 'r', encoding='utf-8') as f:
                 multibuy_for_price_deals = json.load(f)
-            with open(f'results_JSON\\{UKE}\\percentage_deals.json', 'r', encoding='utf-8') as f:
+            with open(f'{JSON_OUTPUT_FOLDER}\\{UKE}\\percentage_deals.json', 'r', encoding='utf-8') as f:
                 percentage_deals = json.load(f)
-            with open(f'results_JSON\\{UKE}\\price_deals.json', 'r', encoding='utf-8') as f:
+            with open(f'{JSON_OUTPUT_FOLDER}\\{UKE}\\price_deals.json', 'r', encoding='utf-8') as f:
                 price_deals = json.load(f)
-            with open(f'results_JSON\\{UKE}\\three_for_two_deals.json', 'r', encoding='utf-8') as f:
+            with open(f'{JSON_OUTPUT_FOLDER}\\{UKE}\\three_for_two_deals.json', 'r', encoding='utf-8') as f:
                 three_for_two_deals = json.load(f)
 
             all_deals = {
@@ -198,13 +196,12 @@ def Gemini_parser(BUTIKKER, UKE, write_mode = 'add'):
             print(f"Creating input folder: '{IMAGE_INPUT_FOLDER}'")
             os.makedirs(IMAGE_INPUT_FOLDER)
             print("Please add your flyer images to this folder and run the script again.")
-            return
+            sys.exit()
 
         if not os.path.exists(JSON_OUTPUT_FOLDER + f'\\{UKE}'):
             print(f"Creating output folder: '{JSON_OUTPUT_FOLDER + f"\\{UKE}"}'")
             os.makedirs(JSON_OUTPUT_FOLDER + f"\\{UKE}")
-            print("Output folder created. Please rerun script.")
-            return
+            print("Output folder created. Continuing.")
         else:
             print(f"file path {JSON_OUTPUT_FOLDER}\\{UKE} already exists, continuing script... \n")
 
@@ -274,11 +271,5 @@ def Gemini_parser(BUTIKKER, UKE, write_mode = 'add'):
             print(f"No data to save for '{filename}'. File not created.")
 
 
-    if API_KEY == "YOUR_API_KEY_HERE":
-        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        print("!!! ERROR: Please set your API_KEY in the script.    !!!")
-        print("!!! Get your key from Google AI Studio and try again.!!!")
-        print("!!! https://aistudio.google.com/app/apikey           !!!")
-        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-    else:
-        process_all_flyers()
+
+    process_all_flyers()

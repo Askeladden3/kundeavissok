@@ -5,16 +5,30 @@ import requests
 import json
 import os
 
-def fetch_kundeavis(refresh_aviser=False):
+def fetch_kundeavis(BUTIKKER, dato, refresh_aviser=False):
     '''Henter urler til alle kundeavis-sider i kupp.vg, og returnerer en dict med butikker som key og liste med urler som value.
     
     Dersom refresh_aviser == True vil programmet forsøke å laste ned ny html-kode fra kupp.vg.no.
     '''
-    current_date = datetime.now()
-    år = current_date.year
-    uke = current_date.date().isocalendar()[1]
 
-    htmlDirectory = f"kundeavis_data/html_src/kupp_{år}_{uke}.txt"
+    curr_date, år, uke = dato
+
+    htmlDirectory = f"temp_output/kupphtml_{år}_{uke}.txt"
+
+    downloaded_shops = []
+    try:
+        for entry in os.listdir(f'kundeavis_data\\{år}_{uke}'):
+            shopName = entry.split('_')[0]
+            if shopName not in downloaded_shops:
+                downloaded_shops.append(shopName)
+        
+        BUTIKKER = list(set(BUTIKKER).difference(set(downloaded_shops)))
+        if not BUTIKKER:
+            print('Kundeavisene til valgte butikker er allerede lasted ned')
+            return None
+    except:
+        pass
+
 
     if refresh_aviser:
         url = "https://kupp.vg.no/"
@@ -24,7 +38,7 @@ def fetch_kundeavis(refresh_aviser=False):
         html_bytes = page.read()
         html = html_bytes.decode("utf-8")
 
-        with open(htmlDirectory, 'w') as fil:
+        with open(htmlDirectory, 'w', encoding='utf-8') as fil:
             fil.write(html)
             print('file written successfully!')
         
@@ -33,12 +47,13 @@ def fetch_kundeavis(refresh_aviser=False):
             html = fil.read()
     
     kundeavisen = {}
-    butikker = ['rema-1000', 'kiwi', 'extra','bunnpris','meny','coop-prix','joker','spar','coop-mega','naerbutikken','coop-marked','obs']
-    butikker = ['kiwi']
-    kundeavisen['header'] = [år, uke, butikker]
+    kundeavisen['header'] = [år, uke, BUTIKKER]
 
 
-    for butikk in butikker:
+
+
+
+    for butikk in BUTIKKER:
 
         avis_src = "https://s.kupp.no/prod/pages/" + butikk + "/" + str(år) + "/" + str(uke) + "/"
 
@@ -67,16 +82,14 @@ def fetch_kundeavis(refresh_aviser=False):
     return kundeavisen
 
 
-def download_kundeaviser(kundeaviser_urls):
+def download_kundeaviser(dato, kundeaviser_urls):
 
-    current_date = datetime.now()
-    år = current_date.year
-    uke = current_date.date().isocalendar()[1]
+    current_date, år, uke = dato
 
     print('Header for valgt kundeavis: ' , kundeaviser_urls['header'])
 
     try:
-        os.mkdir(f'kundeavis_data/{år}_{uke}')
+        os.mkdir(f'temp_output/kundeaviser/{år}_{uke}')
     except:
         pass
 
@@ -99,7 +112,7 @@ def download_kundeaviser(kundeaviser_urls):
         image_urls = value
         butikk = key
         for idx, url in enumerate(image_urls):
-            save_location = f"kundeavis_data/{år}_{uke}/{butikk}_2025_{uke}_{idx}.jpg" 
+            save_location = f"temp_output/kundeaviser/{år}_{uke}/{butikk}_2025_{uke}_{idx}.jpg" 
             download_from_url(url, save_location)
 
 
