@@ -16,6 +16,8 @@ def fetch_kundeavis(BUTIKKER, dato, refresh_aviser=False):
     htmlDirectory = f"temp_output/kupphtml_{år}_{uke}.txt"
 
     downloaded_shops = []
+
+    '''
     try:
         for entry in os.listdir(f'kundeavis_data/{år}_{uke}'):
             shopName = entry.split('_')[0]
@@ -28,6 +30,7 @@ def fetch_kundeavis(BUTIKKER, dato, refresh_aviser=False):
             return None
     except:
         pass
+    '''
 
 
     if refresh_aviser:
