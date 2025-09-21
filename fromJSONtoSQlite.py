@@ -11,7 +11,7 @@ def JSONtoSQlite(dato):
 
     curr_date, år, UKE = dato
 
-    db_file = f'temp_output\\databaser\\kundeavis_{UKE}.db'
+    db_file = f'temp_output/databaser/kundeavis_{UKE}.db'
 
     def EXECUTE_TABLES(item, table_name):
         år = 2025
@@ -70,12 +70,12 @@ def JSONtoSQlite(dato):
 
 
 
-    directory_path = f'temp_output\\results_JSON\\{UKE}'
+    directory_path = f'temp_output/results_JSON/{UKE}'
 
     for entry in os.scandir(directory_path):
         if entry.is_file():
             json_file = entry.path
-            table_name = json_file.split('\\')[2][:-5]
+            table_name = json_file.split('/')[2][:-5]
 
             conn = sqlite3.connect(db_file)
             cursor = conn.cursor()

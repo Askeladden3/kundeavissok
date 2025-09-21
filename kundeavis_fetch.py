@@ -17,7 +17,7 @@ def fetch_kundeavis(BUTIKKER, dato, refresh_aviser=False):
 
     downloaded_shops = []
     try:
-        for entry in os.listdir(f'kundeavis_data\\{år}_{uke}'):
+        for entry in os.listdir(f'kundeavis_data/{år}_{uke}'):
             shopName = entry.split('_')[0]
             if shopName not in downloaded_shops:
                 downloaded_shops.append(shopName)

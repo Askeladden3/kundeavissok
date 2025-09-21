@@ -157,15 +157,15 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
 
 
         if not overwrite:
-            with open(f'{JSON_OUTPUT_FOLDER}\\{UKE}\\kroner_off_deals.json', 'r', encoding='utf-8') as f:
+            with open(f'{JSON_OUTPUT_FOLDER}/{UKE}/kroner_off_deals.json', 'r', encoding='utf-8') as f:
                 kroner_off_deals = json.load(f)
-            with open(f'{JSON_OUTPUT_FOLDER}\\{UKE}\\multibuy_for_price_deals.json', 'r', encoding='utf-8') as f:
+            with open(f'{JSON_OUTPUT_FOLDER}/{UKE}/multibuy_for_price_deals.json', 'r', encoding='utf-8') as f:
                 multibuy_for_price_deals = json.load(f)
-            with open(f'{JSON_OUTPUT_FOLDER}\\{UKE}\\percentage_deals.json', 'r', encoding='utf-8') as f:
+            with open(f'{JSON_OUTPUT_FOLDER}/{UKE}/percentage_deals.json', 'r', encoding='utf-8') as f:
                 percentage_deals = json.load(f)
-            with open(f'{JSON_OUTPUT_FOLDER}\\{UKE}\\price_deals.json', 'r', encoding='utf-8') as f:
+            with open(f'{JSON_OUTPUT_FOLDER}/{UKE}/price_deals.json', 'r', encoding='utf-8') as f:
                 price_deals = json.load(f)
-            with open(f'{JSON_OUTPUT_FOLDER}\\{UKE}\\three_for_two_deals.json', 'r', encoding='utf-8') as f:
+            with open(f'{JSON_OUTPUT_FOLDER}/{UKE}/three_for_two_deals.json', 'r', encoding='utf-8') as f:
                 three_for_two_deals = json.load(f)
 
             all_deals = {
@@ -198,12 +198,12 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
             print("Please add your flyer images to this folder and run the script again.")
             sys.exit()
 
-        if not os.path.exists(JSON_OUTPUT_FOLDER + f'\\{UKE}'):
-            print(f"Creating output folder: '{JSON_OUTPUT_FOLDER + f"\\{UKE}"}'")
-            os.makedirs(JSON_OUTPUT_FOLDER + f"\\{UKE}")
+        if not os.path.exists(JSON_OUTPUT_FOLDER + f'/{UKE}'):
+            print(f"Creating output folder: '{JSON_OUTPUT_FOLDER + f"/{UKE}"}'")
+            os.makedirs(JSON_OUTPUT_FOLDER + f"/{UKE}")
             print("Output folder created. Continuing.")
         else:
-            print(f"file path {JSON_OUTPUT_FOLDER}\\{UKE} already exists, continuing script... \n")
+            print(f"file path {JSON_OUTPUT_FOLDER}/{UKE} already exists, continuing script... \n")
 
 
         image_files = []
@@ -250,7 +250,7 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
                 # after each successful API call, ensuring data is not lost on error.
                 print("  Saving current progress to files...")
                 for category_key, deals_list in all_deals.items():
-                    save_to_json(deals_list, f"{JSON_OUTPUT_FOLDER}\\{UKE}\\{category_key}.json")
+                    save_to_json(deals_list, f"{JSON_OUTPUT_FOLDER}/{UKE}/{category_key}.json")
             
             if i < len(image_files) - 1:
                 print("  Waiting 2 seconds before next request...")
