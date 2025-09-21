@@ -70,7 +70,7 @@ def JSONtoSQlite(dato):
 
 
 
-    directory_path = f'temp_output/results_JSON'
+    directory_path = f'temp_output/results_JSON/databaser'
 
     for entry in os.scandir(directory_path):
         if entry.is_file():
