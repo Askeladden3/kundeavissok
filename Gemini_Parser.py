@@ -199,7 +199,7 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
             sys.exit()
 
         if not os.path.exists(JSON_OUTPUT_FOLDER + f'/{UKE}'):
-            print(f"Creating output folder: '{JSON_OUTPUT_FOLDER + f"/{UKE}"}'")
+            print(f"Creating output folder: {JSON_OUTPUT_FOLDER + f"/{UKE}"}")
             os.makedirs((JSON_OUTPUT_FOLDER + f"/{UKE}"))
             print("Output folder created. Continuing.")
         else:
