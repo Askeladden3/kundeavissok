@@ -41,7 +41,7 @@ def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = F
 #EKSEMPELKJØRINGER:
 
 #OPPDATER DATABASE TIL NY UKE (Lager også ny database-fil):
-main(ny_uke=True, append_til_JSON = False)
+main(ny_uke=True, append_til_JSON = False, BUTIKKER=['kiwi'])
 
 
 #LEGGE TIL EN ENKELT BUTIKK PÅ ALLEREDE EKSISTERENDE JSON-FILER (F. eks dersom en butikk var treg med å legge ut kundeavisen sin)

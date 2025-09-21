@@ -35,7 +35,7 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
     API_KEY = os.environ['API_KEY']
 
     # Folder where your flyer images are stored (e.g., 'rema1000_20250809.jpg')
-    IMAGE_INPUT_FOLDER = f"temp_output/kundeaviser/{år}_{UKE}" 
+    IMAGE_INPUT_FOLDER = f"temp_output/bilder" 
     JSON_OUTPUT_FOLDER = "temp_output/results_JSON"
 
 
@@ -200,7 +200,7 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
 
         if not os.path.exists(JSON_OUTPUT_FOLDER + f'/{UKE}'):
             print(f"Creating output folder: '{JSON_OUTPUT_FOLDER + f"/{UKE}"}'")
-            os.makedirs(JSON_OUTPUT_FOLDER + f"/{UKE}")
+            os.makedirs((JSON_OUTPUT_FOLDER + f"/{UKE}"))
             print("Output folder created. Continuing.")
         else:
             print(f"file path {JSON_OUTPUT_FOLDER}/{UKE} already exists, continuing script... \n")

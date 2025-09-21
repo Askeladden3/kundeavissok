@@ -89,7 +89,7 @@ def download_kundeaviser(dato, kundeaviser_urls):
     print('Header for valgt kundeavis: ' , kundeaviser_urls['header'])
 
     try:
-        os.mkdir(f'temp_output/kundeaviser/{år}_{uke}')
+        os.mkdir(f'temp_output/bilder')
     except:
         pass
 
@@ -112,7 +112,7 @@ def download_kundeaviser(dato, kundeaviser_urls):
         image_urls = value
         butikk = key
         for idx, url in enumerate(image_urls):
-            save_location = f"temp_output/kundeaviser/{år}_{uke}/{butikk}_2025_{uke}_{idx}.jpg" 
+            save_location = f"temp_output/bilder/{butikk}_2025_{uke}_{idx}.jpg" 
             download_from_url(url, save_location)
 
 
