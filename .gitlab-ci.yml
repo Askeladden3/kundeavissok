@@ -1,41 +1,47 @@
 stages:
-  - build
+  - run
   - store
 
-# Stage 1: Run script and generate files
-weekly_job:
-  stage: build
+default:
   image: python:3.11
-  script:
-    # Install dependencies if needed
+  before_script:
+    - pip install --upgrade pip
     - pip install -r requirements.txt
-    # Create temp folder for intermediates
-    - mkdir -p temp_output
-    # Run your script (assume it puts images + JSON + DB file in temp_output)
-    - python generate.py --outdir temp_output
-    # Move DB file to separate folder for persistence
-    - mkdir -p db_output
-    - mv temp_output/database.db db_output/
-  artifacts:
-    paths:
-      - temp_output/
-    expire_in: 1 week    # delete intermediates after a week
+
+# 1. Run the weekly script
+weekly_job:
+  stage: run
+  script:
+    - echo "Running weekly job..."
+    - python main.py
   only:
     - schedules
 
-# Stage 2: Save DB file to separate branch
-save_db:
+# 2. Save the database file to the 'databases' branch
+save_database:
   stage: store
   needs: ["weekly_job"]
   script:
+    - echo "Saving database file to 'databases' branch..."
+
+    # Configure git identity
+    - git config --global user.email "ci-bot@stud.idi.ntnu.no"
     - git config --global user.name "CI Bot"
-    - git config --global user.email "ci-bot@example.com"
-    - git fetch origin
-    - git checkout db-history || git checkout -b db-history
-    - mkdir -p weekly_dbs/week-$(date +%V)
-    - cp db_output/database.db weekly_dbs/week-$(date +%V)/
-    - git add weekly_dbs/
-    - git commit -m "Add database for week $(date +%V)"
-    - git push origin db-history
+
+    # Clone repo with token authentication
+    - git clone https://oauth2:${GITLAB_TOKEN}@gitlab.stud.idi.ntnu.no/kundeavissok.git repo
+    - cd repo
+
+    # Switch/create 'databases' branch
+    - git checkout databases || git checkout -b databases
+
+    # Copy the database file with ISO week naming
+    - WEEK=$(date +%V)
+    - cp ../kundeavis_${WEEK}.db ./kundeavis_${WEEK}.db
+
+    # Commit + push
+    - git add kundeavis_${WEEK}.db
+    - git commit -m "Add weekly database for week ${WEEK}"
+    - git push origin databases
   only:
     - schedules
