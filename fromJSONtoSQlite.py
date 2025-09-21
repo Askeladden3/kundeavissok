@@ -7,7 +7,9 @@ import sqlite3
 
 
 
-def JSONtoSQlite(UKE):
+def JSONtoSQlite(dato):
+
+    curr_date, år, UKE = dato
 
     db_file = f'temp_output\\databaser\\kundeavis_{UKE}.db'
 
@@ -68,7 +70,7 @@ def JSONtoSQlite(UKE):
 
 
 
-    directory_path = f'results_JSON\\{UKE}'
+    directory_path = f'temp_output\\results_JSON\\{UKE}'
 
     for entry in os.scandir(directory_path):
         if entry.is_file():

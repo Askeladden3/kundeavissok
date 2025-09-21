@@ -32,7 +32,7 @@ def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = F
     
     if not skip_parsing:
         Gemini_parser(BUTIKKER, dato, write_mode)
-    JSONtoSQlite(uke)
+    JSONtoSQlite(dato)
     if ny_uke:
         addToWebsite(uke)
 

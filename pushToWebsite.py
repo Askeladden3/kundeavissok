@@ -7,7 +7,7 @@ def addToWebsite(UKE):
     port = 22
     username = "askhf"
     password = os.environ['PASSWORD']
-    local_file = f"temp_output/databaser/kundeavis_{UKE}.db"
+    local_file = f"temp_output/databaser/kundeavis_{UKE}_test.db"
     remote_path = f"/web/folk/{username}/{local_file}"
 
     ssh = paramiko.SSHClient()
