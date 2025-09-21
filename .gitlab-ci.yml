@@ -12,7 +12,6 @@ default:
 weekly_job:
   stage: run
   script:
-    - echo "API_KEY is $GEMINI_API_KEY"
     - echo "Running weekly job..."
     - python main.py
   only:
