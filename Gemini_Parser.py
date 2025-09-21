@@ -199,9 +199,7 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
 
         
         if not os.path.exists(IMAGE_INPUT_FOLDER):
-            print(f"Creating input folder: '{IMAGE_INPUT_FOLDER}'")
-            os.makedirs(IMAGE_INPUT_FOLDER)
-            print("Please add your flyer images to this folder and run the script again.")
+            print("Please add your flyer images to folder and run the script again.")
             sys.exit()
 
         if not os.path.exists(JSON_OUTPUT_FOLDER + f'/{UKE}'):
