@@ -34,7 +34,7 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
     # --- CONFIGURATION ---
     # IMPORTANT: Get your API key from Google AI Studio and paste it here.
     # https://aistudio.google.com/app/apikey
-    API_KEY = os.environ['API_KEY']
+    API_KEY = os.getenv("API_KEY")
 
     # Folder where your flyer images are stored (e.g., 'rema1000_20250809.jpg')
     IMAGE_INPUT_FOLDER = f"temp_output/bilder" 
