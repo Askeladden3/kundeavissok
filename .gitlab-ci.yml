@@ -5,9 +5,9 @@ check_api_var:
   stage: test
   script:
     - echo "🔎 Checking API_KEY..."
-    - if [ -z "$API_KEY" ]; then echo "❌ API_KEY is not set"; exit 1; fi
+    - if [ -z "$GEMINI_API_KEY" ]; then echo "❌ API_KEY is not set"; exit 1; fi
     - echo "✅ API_KEY exists in environment"
-    - echo "🔒 Length of API_KEY; ${#API_KEY}"
-    - echo "🔒 First 4 characters of API_KEY; ${API_KEY:0:4}**** (rest hidden)"
+    - echo "🔒 Length of API_KEY; ${#GEMINI_API_KEY}"
+    - echo "🔒 First 4 characters of API_KEY; ${GEMINI_API_KEY:0:4}**** (rest hidden)"
   only:
     - schedules
