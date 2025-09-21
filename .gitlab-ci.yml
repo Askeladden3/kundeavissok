@@ -12,10 +12,10 @@ weekly_job:
     # Create temp folder for intermediates
     - mkdir -p temp_output
     # Run your script (assume it puts images + JSON + DB file in temp_output)
-    - python generate.py --outdir temp_output
+    - python main.py --outdir temp_output
     # Move DB file to separate folder for persistence
     - mkdir -p db_output
-    - mv temp_output/database.db db_output/
+    - mv temp_output/databaser/database.db db_output/
   artifacts:
     paths:
       - temp_output/
