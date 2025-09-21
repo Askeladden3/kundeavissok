@@ -8,14 +8,6 @@ default:
     - pip install --upgrade pip
     - pip install -r requirements.txt
 
-
-check_api:
-  stage: run
-  script:
-    - echo "length; ${#API_KEY}"
-  only:
-    - schedules
-
 # 1. Run the weekly script
 weekly_job:
   stage: run
