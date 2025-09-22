@@ -12,7 +12,7 @@ def JSONtoSQlite(dato):
     curr_date, år, UKE = dato
 
     os.mkdir('temp_output/databaser')
-    db_file = f'temp_output/databaser/kundeavis_{UKE}_test.db'
+    db_file = f'temp_output/databaser/kundeavis_{UKE}.db'
 
     def EXECUTE_TABLES(item, table_name):
         dato = datetime.strptime(f'{år} {UKE} 1', '%G %V %u').date()
