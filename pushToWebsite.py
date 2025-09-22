@@ -8,8 +8,8 @@ def addToWebsite(UKE):
     username = "askhf"
     password = os.environ['PASSWORD']
     local_file = f"temp_output/databaser/kundeavis_{UKE}_test.db"
-    remote_path = f"/web/folk/{username}/{local_file}"
-
+    remote_path = f"/web/folk/{username}/{local_file.split('/')[-1]}"
+    
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(hostname, port, username, password)
