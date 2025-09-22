@@ -11,7 +11,8 @@ def JSONtoSQlite(dato):
 
     curr_date, år, UKE = dato
 
-    db_file = f'temp_output/databaser/kundeavis_{UKE}.db'
+    os.mkdir('temp_output/databaser')
+    db_file = f'temp_output/databaser/kundeavis_{UKE}_test.db'
 
     def EXECUTE_TABLES(item, table_name):
         år = 2025
