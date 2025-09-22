@@ -29,7 +29,7 @@ save_database:
     - git config --global user.name "CI Bot"
 
     # Clone repo with token authentication
-    - git clone https://oauth2:${GITLAB_TOKEN}@gitlab.stud.idi.ntnu.no/kundeavissok.git repo
+    - git clone https://oauth2:${GITLAB_TOKEN}@gitlab.stud.idi.ntnu.no/askhf/kundeavissok.git repo
     - cd repo
 
     # Switch/create 'databases' branch
