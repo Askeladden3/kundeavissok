@@ -202,7 +202,7 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
             print("Please add your flyer images to folder and run the script again.")
             sys.exit()
 
-        if not os.path.exists(JSON_OUTPUT_FOLDER + f'/{UKE}'):
+        if not os.path.exists(JSON_OUTPUT_FOLDER):
             print(f"Creating output folder: {JSON_OUTPUT_FOLDER}")
             os.makedirs((JSON_OUTPUT_FOLDER))
             print("Output folder created. Continuing.")
@@ -249,9 +249,6 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
                             deal['acquired_date'] = acquired_date
                             deal['page_number'] = page_number
                             all_deals[category_key].append(deal)
-                # --- CHANGE: SAVE AFTER EACH FLYER ---
-                # This section now saves the complete, updated lists to their files
-                # after each successful API call, ensuring data is not lost on error.
                 print("  Saving current progress to files...")
                 for category_key, deals_list in all_deals.items():
                     save_to_json(deals_list, f"{JSON_OUTPUT_FOLDER}/{category_key}.json")
