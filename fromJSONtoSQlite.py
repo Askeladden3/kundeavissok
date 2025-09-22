@@ -138,8 +138,8 @@ def JSONtoSQlite(dato):
     for entry in os.scandir(JSON_dirpath):
         if entry.is_file():
             json_file = entry.path
-            print(json_file)
-            table_name = json_file.split('\\')[1][:-5]
+            print(json_file.split('/'))
+            table_name = json_file.split('/')[2][:-5]
 
             conn = sqlite3.connect(db_file)
             cursor = conn.cursor()
