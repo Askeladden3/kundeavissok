@@ -16,7 +16,7 @@ weekly_job:
     - python main.py
   artifacts:
     paths:
-      - temp_output/kundeavis_*.db   # save the database file(s)
+      - temp_output/databaser/kundeavis_*.db   # save the database file(s)
     expire_in: 1 week
   only:
     - schedules
@@ -41,7 +41,7 @@ save_database:
 
     # Copy the database file with ISO week naming
     - WEEK=$(date +%V)
-    - cp ../temp_output/kundeavis_${WEEK}.db ./kundeavis_${WEEK}.db
+    - cp ../temp_output/databaser/kundeavis_${WEEK}.db ./kundeavis_${WEEK}.db
 
     # Commit + push
     - git add kundeavis_${WEEK}.db
