@@ -8,7 +8,7 @@ default:
     - pip install --upgrade pip
     - pip install -r requirements.txt
 
-# 1. Run the weekly script
+
 weekly_job:
   stage: run
   script:
@@ -16,36 +16,7 @@ weekly_job:
     - python main.py
   artifacts:
     paths:
-      - temp_output/databaser/kundeavis_*.db   # save the database file(s)
+      - **temp_output/**
     expire_in: 1 week
-  only:
-    - schedules
-
-# 2. Save the database file to the 'databases' branch
-save_database:
-  stage: store
-  needs: ["weekly_job"]   # pull artifacts from weekly_job
-  script:
-    - echo "Saving database file to 'databases' branch..."
-
-    # Configure git identity
-    - git config --global user.email "ci-bot@stud.idi.ntnu.no"
-    - git config --global user.name "CI Bot"
-
-    # Clone repo with token authentication
-    - git clone https://oauth2:${GITLAB_TOKEN}@gitlab.stud.idi.ntnu.no/askhf/kundeavissok.git repo
-    - cd repo
-
-    # Switch/create 'databases' branch
-    - git checkout databases || git checkout -b databases
-
-    # Copy the database file with ISO week naming
-    - WEEK=$(date +%V)
-    - cp ../temp_output/databaser/kundeavis_${WEEK}.db ./kundeavis_${WEEK}.db
-
-    # Commit + push
-    - git add kundeavis_${WEEK}.db
-    - git commit -m "Add weekly database for week ${WEEK}" || echo "No changes to commit"
-    - git push origin databases
   only:
     - schedules

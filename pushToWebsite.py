@@ -51,8 +51,6 @@ def create_frontend_files(UKE: int):
     with open('temp_output/search.php', 'w', encoding='utf-8') as f:
         f.write(output_php)
 
-    
-
 
 def updateWebsite(UKE):
     hostname = "login.stud.ntnu.no"
