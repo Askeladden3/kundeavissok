@@ -4,7 +4,7 @@ from fromJSONtoSQlite import JSONtoSQlite
 from kundeavis_fetch import fetch_kundeavis, download_kundeaviser
 import datetime
 import time
-from pushToWebsite import addToWebsite
+from pushToWebsite import updateWebsite, create_frontend_files
 
 def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = False):
     #TODO 1: om ny_uke = True bør programmet likevel sjekke om kundeavisbilder er lastet ned fra før, og at om de er det så hopper den over nedlastningen
@@ -33,8 +33,10 @@ def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = F
     if not skip_parsing:
         Gemini_parser(BUTIKKER, dato, write_mode)
     JSONtoSQlite(dato)
+
     if ny_uke:
-        addToWebsite(uke)
+        create_frontend_files(uke)
+        updateWebsite(uke)
 
 
 
