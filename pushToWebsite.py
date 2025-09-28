@@ -60,7 +60,7 @@ def updateWebsite(UKE):
     username = "askhf"
     password = os.environ['PASSWORD']
 
-    local_files = [f"temp_output/databaser/kundeavis_{UKE}.db", "temp_output/index.html", "'temp_output/search.php'"]
+    local_files = [f"temp_output/databaser/kundeavis_{UKE}.db", "temp_output/index.html", "temp_output/search.php"]
     remote_paths = [f"/web/folk/{username}/databaser/kundeavis_{UKE}.db", f"/web/folk/{username}/index.html", f"/web/folk/{username}/search.php"]
     
     ssh = paramiko.SSHClient()
