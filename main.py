@@ -7,9 +7,10 @@ import time
 from pushToWebsite import updateWebsite, create_frontend_files
 
 def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = False):
+    Alle_butikker = ['rema-1000', 'kiwi', 'extra','bunnpris','meny','coop-prix','joker','spar','coop-mega','coop-marked','obs']
     #TODO 1: om ny_uke = True bør programmet likevel sjekke om kundeavisbilder er lastet ned fra før, og at om de er det så hopper den over nedlastningen
     if not BUTIKKER:
-        BUTIKKER = ['rema-1000', 'kiwi', 'extra','bunnpris','meny','coop-prix','joker','spar','coop-mega','coop-marked','obs']
+        BUTIKKER = Alle_butikker
 
 
     current_date = datetime.datetime.now()
@@ -35,7 +36,7 @@ def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = F
     JSONtoSQlite(dato)
 
     if ny_uke:
-        create_frontend_files(uke)
+        create_frontend_files(uke, Alle_butikker)
         updateWebsite(uke)
 
 
