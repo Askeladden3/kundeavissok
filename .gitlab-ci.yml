@@ -16,7 +16,7 @@ weekly_job:
     - python main.py
   artifacts:
     paths:
-      - **temp_output/**
+      - temp_output/
     expire_in: 1 week
   only:
     - schedules
