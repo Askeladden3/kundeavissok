@@ -31,7 +31,7 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
         raise ValueError("Ikke godkjent write_mode")
 
 
-    API_KEY = os.getenv("GEMINI_API_KEY")
+    API_KEY = 'hehe' #os.getenv("GEMINI_API_KEY")
 
     if not API_KEY:
         sys.exit("❌ ERROR: API_KEY not found in environment variables!")
@@ -180,13 +180,13 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
                         f.write(r.content)
             with open(f'{JSON_OUTPUT_FOLDER}/kroner_off_deals.json', 'r', encoding='utf-8') as f:
                 kroner_off_deals = json.load(f)
-            with open(f'{JSON_OUTPUT_FOLDER}/{UKE}/multibuy_for_price_deals.json', 'r', encoding='utf-8') as f:
+            with open(f'{JSON_OUTPUT_FOLDER}/multibuy_for_price_deals.json', 'r', encoding='utf-8') as f:
                 multibuy_for_price_deals = json.load(f)
-            with open(f'{JSON_OUTPUT_FOLDER}/{UKE}/percentage_deals.json', 'r', encoding='utf-8') as f:
+            with open(f'{JSON_OUTPUT_FOLDER}/percentage_deals.json', 'r', encoding='utf-8') as f:
                 percentage_deals = json.load(f)
-            with open(f'{JSON_OUTPUT_FOLDER}/{UKE}/price_deals.json', 'r', encoding='utf-8') as f:
+            with open(f'{JSON_OUTPUT_FOLDER}/price_deals.json', 'r', encoding='utf-8') as f:
                 price_deals = json.load(f)
-            with open(f'{JSON_OUTPUT_FOLDER}/{UKE}/three_for_two_deals.json', 'r', encoding='utf-8') as f:
+            with open(f'{JSON_OUTPUT_FOLDER}/three_for_two_deals.json', 'r', encoding='utf-8') as f:
                 three_for_two_deals = json.load(f)
 
             all_deals = {
