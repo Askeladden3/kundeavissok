@@ -31,7 +31,7 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
         raise ValueError("Ikke godkjent write_mode")
 
 
-    API_KEY = 'hehe' #os.getenv("GEMINI_API_KEY")
+    API_KEY = os.getenv("GEMINI_API_KEY")
 
     if not API_KEY:
         sys.exit("❌ ERROR: API_KEY not found in environment variables!")
