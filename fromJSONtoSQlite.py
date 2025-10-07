@@ -22,11 +22,14 @@ def JSONtoSQlite(dato):
                 INSERT INTO kroner_off_deals (name, amount_subtracted, store, avis_date, page_number)
                 VALUES (?, ?, ?, ?, ?)
             ''', (item['name'], item['amount_subtracted'], item['store'], dato, item['page_number'])]
+
+
         elif table_name == 'multibuy_for_price_deals':
             table = ['''
                 INSERT INTO multibuy_for_price_deals (name, amount_of_wares, set_price, store, avis_date, page_number)
                 VALUES (?, ?, ?, ?, ?, ?)
             ''', (item['name'], item['amount_of_wares'], item['set_price'], item['store'], dato, item['page_number'])]
+
 
         elif table_name == 'percentage_deals':
             table = ['''
@@ -174,6 +177,8 @@ def JSONtoSQlite(dato):
             conn.commit()
             
             for item in processed_data:
+                if table_name == 'multibuy_for_price_deals' and not item['set_price']:
+                    continue
                 unique_stores.add(item['store'])
 
                 sqlite_command, sqlite_data = EXECUTE_TABLES(item, table_name)
