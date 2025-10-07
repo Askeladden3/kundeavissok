@@ -176,7 +176,7 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
                 if href and href.endswith(".json"):
                     file_url = json_url + href
                     r = requests.get(file_url)
-                    with open(f'{JSON_OUTPUT_FOLDER}\\{href}', "wb") as f:
+                    with open(f'{JSON_OUTPUT_FOLDER}/{href}', "wb") as f:
                         f.write(r.content)
             with open(f'{JSON_OUTPUT_FOLDER}/kroner_off_deals.json', 'r', encoding='utf-8') as f:
                 kroner_off_deals = json.load(f)
