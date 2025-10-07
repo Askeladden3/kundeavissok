@@ -23,13 +23,12 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
     current_date, år, UKE = DATO
 
 
-#    if write_mode == 'add':
-#        overwrite = False
-#    elif write_mode == 'replace':
-#        overwrite = True
-#    else:
-#        raise ValueError("Ikke godkjent write_mode")
-    overwrite = True
+    if write_mode == 'add':
+        overwrite = False
+    elif write_mode == 'replace':
+        overwrite = True
+    else:
+        raise ValueError("Ikke godkjent write_mode")
 
 
     # --- CONFIGURATION ---
