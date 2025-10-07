@@ -2,7 +2,7 @@ import paramiko
 import os
 from jinja2 import Environment, FileSystemLoader
 
-def create_frontend_files(UKE: int, Alle_butikker):
+def create_frontend_files(UKE: int, Alle_butikker, nedlastede_butikker):
 
     finenavn_dict = {'rema-1000':'Rema 1000', 'kiwi': 'Kiwi', 'extra': 'Coop Extra',
                      'bunnpris': 'Bunnpris','meny': 'Meny','coop-prix': 'Coop Prix',
@@ -11,11 +11,12 @@ def create_frontend_files(UKE: int, Alle_butikker):
 
     folder_path = "temp_output/bilder/"
 
+    '''
     nedlastede_butikker = set()
     for entry in os.listdir(folder_path):
         butikknavn = entry.split('_')[0]
         nedlastede_butikker.add(butikknavn)
-
+    '''
     utilgjengelige_butikker = set(Alle_butikker).difference(nedlastede_butikker)
 
     if not utilgjengelige_butikker:

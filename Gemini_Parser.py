@@ -6,6 +6,7 @@ import datetime
 from datetime import datetime
 import requests
 import sys
+from bs4 import BeautifulSoup
 
 
 
@@ -163,6 +164,20 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
         """
 
         if not overwrite:
+
+            json_url = "https://askhf.folk.ntnu.no/temp_JSON/"
+
+
+            response = requests.get(json_url)
+            soup = BeautifulSoup(response.text, 'html.parser')
+
+            for link in soup.find_all("a"):
+                href = link.get("href")
+                if href and href.endswith(".json"):
+                    file_url = json_url + href
+                    r = requests.get(file_url)
+                    with open(f'{JSON_OUTPUT_FOLDER}\\{href}', "wb") as f:
+                        f.write(r.content)
             with open(f'{JSON_OUTPUT_FOLDER}/kroner_off_deals.json', 'r', encoding='utf-8') as f:
                 kroner_off_deals = json.load(f)
             with open(f'{JSON_OUTPUT_FOLDER}/{UKE}/multibuy_for_price_deals.json', 'r', encoding='utf-8') as f:

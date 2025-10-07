@@ -33,10 +33,10 @@ def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = F
     
     if not skip_parsing:
         Gemini_parser(BUTIKKER, dato, write_mode)
-    JSONtoSQlite(dato)
+    nedlastede_butikker = JSONtoSQlite(dato)
 
     if ny_uke:
-        create_frontend_files(uke, Alle_butikker)
+        create_frontend_files(uke, Alle_butikker, nedlastede_butikker)
         updateWebsite(uke)
 
 
@@ -45,7 +45,7 @@ def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = F
 #EKSEMPELKJØRINGER:
 
 #OPPDATER DATABASE TIL NY UKE (Lager også ny database-fil):
-main(ny_uke=True, append_til_JSON = False)
+main(ny_uke=True, append_til_JSON = True, BUTIKKER =  ['kiwi','meny','joker','spar'])
 
 
 #LEGGE TIL EN ENKELT BUTIKK PÅ ALLEREDE EKSISTERENDE JSON-FILER (F. eks dersom en butikk var treg med å legge ut kundeavisen sin)

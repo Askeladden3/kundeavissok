@@ -1,3 +1,4 @@
 requests
 paramiko
 jinja2
+beautifulsoup4

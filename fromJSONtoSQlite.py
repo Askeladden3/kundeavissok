@@ -132,6 +132,9 @@ def JSONtoSQlite(dato):
 
     JSON_dirpath = f'temp_output/results_JSON'
 
+
+    unique_stores = set()
+
     for entry in os.scandir(JSON_dirpath):
         if entry.is_file():
             json_file = entry.path
@@ -169,9 +172,9 @@ def JSONtoSQlite(dato):
 
             cursor.execute(CREATE_TABLE(table_name))
             conn.commit()
-
-
+            
             for item in processed_data:
+                unique_stores.add(item['store'])
 
                 sqlite_command, sqlite_data = EXECUTE_TABLES(item, table_name)
                 cursor.execute(sqlite_command, sqlite_data)
@@ -179,5 +182,7 @@ def JSONtoSQlite(dato):
             CREATE_SEARCH_TABLE(table_name)
 
             conn.commit()
+
+    return unique_stores
 
     
