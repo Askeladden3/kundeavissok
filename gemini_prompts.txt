@@ -1,0 +1,32 @@
+Main prompt: """
+        Analyze the provided image of a Norwegian grocery store flyer.
+        Identify and categorize all distinct product offers into five specific types.
+        Return the result as a single, valid JSON object with five keys. Each key should contain an array of objects for that category. If a category has no offers, its array must be empty.
+
+        1.  `price_deals`: Standard price reductions.
+            - `name`: The main name of the product.
+            - `total_price`: The sale price as a decimal number.
+            - `price_per_unit`: The price per kg or liter, as a decimal number, or null if not present.
+            - `total_mass`: The total weight/volume as a decimal number (e.g., "500 g" becomes 0.5, "1.5 l" becomes 1.5), or null.
+            - `unit`: The unit of measurement, either "kg" or "l". Infer from the product type (e.g., meat is kg, milk is l).
+
+        2.  `percentage_deals`: A percentage off the price (e.g., "-30%").
+            - `name`: The product name.
+            - `percentage_off`: The discount percentage as a number (e.g., 30).
+
+        3.  `three_for_two_deals`: ONLY for "3 for 2" offers. Do not include any other combinations.
+            - `name`: The product name.
+
+        4.  `multibuy_for_price_deals`: For offers like "X for Y kr" that are NOT "3 for 2".
+            - `name`: The product name.
+            - `amount_of_wares`: The number of items you must buy (the 'X' value).
+            - `set_price`: The total price for the multibuy (the 'Y' value).
+
+        5.  `kroner_off_deals`: A fixed amount subtracted from the price (e.g., "-5 kr").
+            - `name`: The product name.
+            - `amount_subtracted`: The amount of kroners subtracted as a number (e.g., 5).
+
+        Do not include any text, markdown, or explanations outside of the final JSON object.
+        """
+
+

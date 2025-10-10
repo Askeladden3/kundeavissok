@@ -66,16 +66,18 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
         # 2. Construct the prompt for the Gemini API
         # This is a highly detailed prompt to ensure the model returns data in the precise format needed.
         prompt = """
-        Analyze the provided image of a Norwegian grocery store flyer.
+        Analyze the provided image of a Norwegian grocery store flyer. Your primary goal is to identify the best deals by focusing on the **price per kilogram (pr. kg) or price per liter (pr. l)**, which is often in smaller text below the product description.
+
         Identify and categorize all distinct product offers into five specific types.
         Return the result as a single, valid JSON object with five keys. Each key should contain an array of objects for that category. If a category has no offers, its array must be empty.
 
         1.  `price_deals`: Standard price reductions.
+            - **Sort the items in this array from the lowest `price_per_unit` to the highest.**
             - `name`: The main name of the product.
-            - `total_price`: The sale price as a decimal number.
-            - `price_per_unit`: The price per kg or liter, as a decimal number, or null if not present.
+            - `price_per_unit`: **The most important value.** The price per kg or liter, as a decimal number. Find this by looking for text like "pr. kg" or "pr. l".
+            - `total_price`: The total sale price as a decimal number.
             - `total_mass`: The total weight/volume as a decimal number (e.g., "500 g" becomes 0.5, "1.5 l" becomes 1.5), or null.
-            - `unit`: The unit of measurement, either "kg" or "l". Infer from the product type (e.g., meat is kg, milk is l).
+            - `unit`: The unit of measurement, either "kg" or "l". Infer from the product type or the unit price text.
 
         2.  `percentage_deals`: A percentage off the price (e.g., "-30%").
             - `name`: The product name.
