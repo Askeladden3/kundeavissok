@@ -73,3 +73,22 @@ def updateWebsite(UKE):
         sftp.put(local_files[index], remote_paths[index])
     sftp.close()
     ssh.close()
+
+def updateWebsite_testing(UKE):
+    hostname = "login.stud.ntnu.no"
+    port = 22
+    username = "askhf"
+    password = os.environ['PASSWORD']
+
+    local_files = [f"temp_output/databaser/kundeavis_{UKE}.db"]
+    remote_paths = [f"/web/folk/{username}/databaser/kundeavis_{UKE}_testdatabase.db"]
+
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(hostname, port, username, password)
+
+    sftp = ssh.open_sftp()
+    for index in range(len(local_files)):
+        sftp.put(local_files[index], remote_paths[index])
+    sftp.close()
+    ssh.close()

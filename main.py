@@ -4,7 +4,7 @@ from fromJSONtoSQlite import JSONtoSQlite
 from kundeavis_fetch import fetch_kundeavis, download_kundeaviser
 import datetime
 import time
-from pushToWebsite import updateWebsite, create_frontend_files
+from pushToWebsite import updateWebsite, create_frontend_files, updateWebsite_testing
 
 def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = False):
     Alle_butikker = ['rema-1000', 'kiwi', 'extra','bunnpris','meny','coop-prix','joker','spar','coop-mega','coop-marked','obs']
@@ -37,7 +37,8 @@ def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = F
 
     if ny_uke:
         create_frontend_files(uke, Alle_butikker, nedlastede_butikker)
-        updateWebsite(uke)
+        #updateWebsite(uke)
+        updateWebsite_testing(uke)
 
 
 
