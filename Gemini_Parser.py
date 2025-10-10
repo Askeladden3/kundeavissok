@@ -72,7 +72,6 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
         Return the result as a single, valid JSON object with five keys. Each key should contain an array of objects for that category. If a category has no offers, its array must be empty.
 
         1.  `price_deals`: Standard price reductions.
-            - **Sort the items in this array from the lowest `price_per_unit` to the highest.**
             - `name`: The main name of the product.
             - `price_per_unit`: **The most important value.** The price per kg or liter, as a decimal number. Find this by looking for text like "pr. kg" or "pr. l".
             - `total_price`: The total sale price as a decimal number.
