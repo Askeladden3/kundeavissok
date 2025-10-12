@@ -113,6 +113,7 @@
     .food-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.15); border-color: rgba(102, 126, 234, 0.3); }
     .food-name { font-size: 1.3rem; font-weight: 700; color: #333; margin-bottom: 0.5rem; line-height: 1.3; }
     .price-section { margin: 1rem 0; }
+    .units { font-size: 1.2rem; font-weight: 800; color: #4b4e49; margin-bottom: 0.3rem; }
     .total-price { font-size: 1.8rem; font-weight: 800; color: #2d5016; margin-bottom: 0.3rem; }
     .price-per-kg { font-size: 1rem; color: #666; font-weight: 500; }
     .store-info { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee; }
@@ -194,7 +195,7 @@
                   dealBadge = '';
               }
               //mainPrice = Pris Per Kg/L eller prosent avslag || subPrice = Totalpris eller ingenting
-              const mainPrice = (item.price_per_unit && !isNaN(item.price_per_unit)) ? `${parseFloat(item.price_per_unit).toFixed(2)} kr/${item.unit || 'enhet'}` :  (item.deal_type === 'percentage' ? ` -${item.percentage_off}% `: '');
+              const mainPrice = (item.price_per_unit && !isNaN(item.price_per_unit)) ? `${parseFloat(item.price_per_unit).toFixed(2)} <span class="units">kr/${item.unit}</span>` :  (item.deal_type === 'percentage' ? ` -${item.percentage_off}% `: '');
               const subPrice = (item.total_price && !isNaN(item.total_price)) ? `kr ${parseFloat(item.total_price).toFixed(2)}` : '';
               const massInfo = (item.total_mass && !isNaN(item.total_mass)) ? `📦 ${item.total_mass} ${item.unit || ''}` : '';
               cardContent = `<div class="food-name">${item.name || ''}</div>${dealBadge}<div class="price-section"><div class="total-price">${mainPrice}</div><div class="price-per-kg">${subPrice}</div></div><div class="deal-info">${massInfo}</div>`;
