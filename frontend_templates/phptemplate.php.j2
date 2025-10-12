@@ -1,14 +1,26 @@
 <?php
 
-/**
- * search.php
- * This script handles searching for food items in a SQLite database.
- * It sanitizes inputs and returns results in JSON format.
- */
+// ===================================================
+//  Enable CORS for alternate domain (kuso.fuhr.no)
+// ===================================================
+$allowed_origins = [
+    'https://kuso.fuhr.no',          // your alternate domain
+    'https://www.kuso.fuhr.no',      // optional: add if www-version also forwards
+];
 
-// --- Error Reporting (for development) ---
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (in_array($origin, $allowed_origins)) {
+    header("Access-Control-Allow-Origin: $origin");
+    header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+    header("Access-Control-Allow-Headers: Content-Type");
+}
+
+// Respond early to CORS preflight requests
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
 
 // --- Configuration & Setup ---
 header('Content-Type: application/json');
@@ -58,7 +70,6 @@ if (!empty($storesFilter)) {
 // --- Query Building ---
 try {
     if ($dealType === 'pris-salg') {
-        // NOTE: removed extra outer parentheses around each SELECT to avoid syntax issues.
         $sql = "
             SELECT 
                 id, name, percentage_off, 
@@ -76,7 +87,7 @@ try {
             FROM price_deals 
             WHERE name LIKE ? {$storeClause}
 
-            ORDER BY deal_priority ASC, total_price ASC
+            ORDER BY deal_priority ASC, price_per_unit ASC
         ";
 
         // Build params in the exact same order as the question marks appear in SQL:

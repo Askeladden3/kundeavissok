@@ -191,11 +191,13 @@
               let dealBadge = '';
               if(item.deal_type === 'percentage' && item.percentage_off) {
                   dealBadge = `<div class="deal-info">🏷️ ${item.percentage_off}% rabatt</div>`;
+                  dealBadge = '';
               }
-              const totalPrice = (item.total_price && !isNaN(item.total_price)) ? `kr ${parseFloat(item.total_price).toFixed(2)}` : (item.deal_type === 'percentage' ? 'Prosent-salg' : '');
-              const pricePerUnit = (item.price_per_unit && !isNaN(item.price_per_unit)) ? `kr ${parseFloat(item.price_per_unit).toFixed(2)} per ${item.unit || 'enhet'}` : '';
+              //mainPrice = Pris Per Kg/L eller prosent avslag || subPrice = Totalpris eller ingenting
+              const mainPrice = (item.price_per_unit && !isNaN(item.price_per_unit)) ? `${parseFloat(item.price_per_unit).toFixed(2)} kr/${item.unit || 'enhet'}` :  (item.deal_type === 'percentage' ? ` -${item.percentage_off}% `: '');
+              const subPrice = (item.total_price && !isNaN(item.total_price)) ? `kr ${parseFloat(item.total_price).toFixed(2)}` : '';
               const massInfo = (item.total_mass && !isNaN(item.total_mass)) ? `📦 ${item.total_mass} ${item.unit || ''}` : '';
-              cardContent = `<div class="food-name">${item.name || ''}</div>${dealBadge}<div class="price-section"><div class="total-price">${totalPrice}</div><div class="price-per-kg">${pricePerUnit}</div></div><div class="deal-info">${massInfo}</div>`;
+              cardContent = `<div class="food-name">${item.name || ''}</div>${dealBadge}<div class="price-section"><div class="total-price">${mainPrice}</div><div class="price-per-kg">${subPrice}</div></div><div class="deal-info">${massInfo}</div>`;
           } else {
               let dealInfo = '';
               switch(item.deal_type) {
@@ -208,18 +210,6 @@
 
           card.innerHTML = `${cardContent}<div class="store-info"><div class="store-name">${item.store || ''}</div><div class="date-info">${item.avis_date || ''}<br>Side: ${item.page_number || ''}</div></div>`;
           resultsContainer.appendChild(card);
-        // Create Add to Cart button
-        const addBtn = document.createElement('button');
-        addBtn.textContent = '🛒 Legg til i kurv';
-        addBtn.style.marginTop = '10px';
-        addBtn.style.padding = '0.5rem 1rem';
-        addBtn.style.border = 'none';
-        addBtn.style.borderRadius = '8px';
-        addBtn.style.cursor = 'pointer';
-        addBtn.style.background = '#667eea';
-        addBtn.style.color = 'white';
-        addBtn.onclick = () => addToCart(item);
-        card.appendChild(addBtn);
 
         });
       } catch (error) {
@@ -263,70 +253,7 @@
       document.getElementById('search').addEventListener('keypress', (e) => { if (e.key === 'Enter') searchFood(); });
       document.getElementById('search').addEventListener('input', (e) => { if (!e.target.value.trim()) document.querySelector('.results-container').innerHTML = '<div class="initial-message">Skriv inn en matvare for å søke</div>'; });
     });
-    // Save item to localStorage cart
-function addToCart(item) {
-  let cart = JSON.parse(localStorage.getItem('cart')) || [];
-  
-  // Avoid duplicates
-  if (!cart.find(i => i.name === item.name && i.store === item.store)) {
-    cart.push(item);
-    localStorage.setItem('cart', JSON.stringify(cart));
-    alert(`${item.name} lagt til i kurven!`);
-    renderCart();
-  } else {
-    alert(`${item.name} er allerede i kurven.`);
-  }
-}
 
-// Remove item from cart
-function removeFromCart(index) {
-  let cart = JSON.parse(localStorage.getItem('cart')) || [];
-  cart.splice(index, 1);
-  localStorage.setItem('cart', JSON.stringify(cart));
-  renderCart();
-}
-
-// Render cart in a floating panel
-function renderCart() {
-  let cart = JSON.parse(localStorage.getItem('cart')) || [];
-  let cartContainer = document.getElementById('cart-container');
-  if (!cartContainer) {
-    cartContainer = document.createElement('div');
-    cartContainer.id = 'cart-container';
-    cartContainer.style.position = 'fixed';
-    cartContainer.style.top = '20px';
-    cartContainer.style.right = '20px';
-    cartContainer.style.width = '250px';
-    cartContainer.style.maxHeight = '80vh';
-    cartContainer.style.overflowY = 'auto';
-    cartContainer.style.background = 'rgba(255,255,255,0.95)';
-    cartContainer.style.backdropFilter = 'blur(10px)';
-    cartContainer.style.borderRadius = '10px';
-    cartContainer.style.padding = '1rem';
-    cartContainer.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
-    document.body.appendChild(cartContainer);
-  }
-
-  cartContainer.innerHTML = `<h3>🛒 Kurv (${cart.length})</h3>`;
-  if (cart.length === 0) {
-    cartContainer.innerHTML += '<p>Kurven er tom</p>';
-  } else {
-    cart.forEach((item, index) => {
-      const div = document.createElement('div');
-      div.style.borderBottom = '1px solid #eee';
-      div.style.marginBottom = '5px';
-      div.style.paddingBottom = '5px';
-      div.innerHTML = `
-        <strong>${item.name}</strong><br>
-        <small>${item.store || ''}</small>
-        <button style="float:right;background:#ff6b6b;color:white;border:none;border-radius:5px;padding:2px 5px;cursor:pointer;" onclick="removeFromCart(${index})">❌</button>
-      `;
-      cartContainer.appendChild(div);
-    });
-  }
-}
-
-  document.addEventListener('DOMContentLoaded', renderCart);
   </script>
 </head>
 <body>

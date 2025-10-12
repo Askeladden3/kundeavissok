@@ -37,8 +37,8 @@ def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = F
 
     if ny_uke:
         create_frontend_files(uke, Alle_butikker, nedlastede_butikker)
-        #updateWebsite(uke)
-        updateWebsite_testing(uke)
+        updateWebsite(uke)
+        #updateWebsite_testing(uke)
 
 
 
@@ -50,7 +50,7 @@ def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = F
 
 
 #LEGGE TIL EN ENKELT BUTIKK PÅ ALLEREDE EKSISTERENDE JSON-FILER (F. eks dersom en butikk var treg med å legge ut kundeavisen sin)
-main(BUTIKKER=['coop-prix'], append_til_JSON = False, ny_uke = True)
+main(ny_uke=True, append_til_JSON = False)
 
 #LAGE NY DATABASE-FIL / KJØR JSONtoSQlite:
 #main(skip_parsing=True)
