@@ -92,7 +92,7 @@ def fetch_kundeavis(BUTIKKER, dato, refresh_aviser=False):
 
     return kundeavisen
 
-def fetch_download_helgetilbud(dato):
+def fetch_helgetilbud(dato):
 
     HELGETILBUDAVISER = {'bunnpris-no':'bunnpris', 'coop-prix-no':'coop-prix'}
 
