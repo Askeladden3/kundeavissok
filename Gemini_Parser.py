@@ -21,6 +21,7 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
     '''
 
     current_date, år, UKE = DATO
+    max_imgs = 240
 
 
     if write_mode == 'add':
@@ -240,8 +241,14 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
         if not image_files:
             print(f"No image files found in '{IMAGE_INPUT_FOLDER}'.")
             return
+        
 
-        print(f"Found {len(image_files)} images to process.")
+        print(f"{len(image_files)} bilder skal behandles.")
+
+        if len(image_files) > max_imgs:
+            excess_img_files = image_files[max_imgs-1:]
+            image_files = image_files[:max_imgs-1]
+            print(f"Antall bilder er større enn 240. Følgende bilder blir dermed ikke behandlet:\n {excess_img_files}")
 
         for i, filename in enumerate(image_files):
             try:
