@@ -4,7 +4,7 @@ from fromJSONtoSQlite import JSONtoSQlite
 from kundeavis_fetch import fetch_kundeavis, download_kundeaviser
 import datetime
 import time
-from pushToWebsite import updateWebsite, create_frontend_files, updateWebsite_testing
+from networking import updateWebsite, create_frontend_files, updateWebsite_testing, zip_and_saveFiles
 
 def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = False):
     Alle_butikker = ['rema-1000', 'kiwi', 'extra','bunnpris','meny','coop-prix','joker','spar','coop-mega','coop-marked','obs']
@@ -38,6 +38,7 @@ def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = F
     if ny_uke:
         create_frontend_files(uke, Alle_butikker, nedlastede_butikker)
         updateWebsite(uke)
+        zip_and_saveFiles(dato)
         #updateWebsite_testing(uke)
 
 
@@ -46,14 +47,11 @@ def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = F
 #EKSEMPELKJØRINGER:
 
 #OPPDATER DATABASE TIL NY UKE (Lager også ny database-fil):
-#main(ny_uke=True, append_til_JSON = False)
-
-
-#LEGGE TIL EN ENKELT BUTIKK PÅ ALLEREDE EKSISTERENDE JSON-FILER (F. eks dersom en butikk var treg med å legge ut kundeavisen sin)
 main(ny_uke=True, append_til_JSON = False)
 
 #LAGE NY DATABASE-FIL / KJØR JSONtoSQlite:
 #main(skip_parsing=True)
 
+#LEGGE TIL EN ENKELT BUTIKK PÅ ALLEREDE EKSISTERENDE JSON-FILER (F. eks dersom en butikk var treg med å legge ut kundeavisen sin)
 #main(BUTIKKER=['joker'], append_til_JSON = True, ny_uke = True)
 

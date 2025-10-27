@@ -1,4 +1,5 @@
 import paramiko
+import shutil
 import os
 from jinja2 import Environment, FileSystemLoader
 
@@ -74,6 +75,32 @@ def updateWebsite(UKE):
     sftp.close()
     ssh.close()
 
+def zip_and_saveFiles(dato):
+
+    current_date, år, uke = dato
+    formatting = 'zip'
+    archive_name = f'kundeavisfiler_{år}_{uke}'
+    full_fileName = archive_name + "." + formatting
+
+    shutil.make_archive(archive_name, formatting, 'temp_output')
+
+    hostname = "login.stud.ntnu.no"
+    port = 22
+    username = "askhf"
+    password = os.environ['PASSWORD']
+
+    local_file = full_fileName
+    remote_path = f"/web/folk/{username}/arkiv/{full_fileName}"
+    
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(hostname, port, username, password)
+
+    sftp = ssh.open_sftp()
+    sftp.put(local_file, remote_path)
+    sftp.close()
+    ssh.close()
+
 def updateWebsite_testing(UKE):
     hostname = "login.stud.ntnu.no"
     port = 22
@@ -92,3 +119,4 @@ def updateWebsite_testing(UKE):
         sftp.put(local_files[index], remote_paths[index])
     sftp.close()
     ssh.close()
+
