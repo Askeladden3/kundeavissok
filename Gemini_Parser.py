@@ -166,6 +166,7 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
 
 
             model.n_calls += 1
+            print('Kaller API')
 
             
             if model.rate_limit_reached():
