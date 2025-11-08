@@ -48,15 +48,53 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
         pass
 
 
-    # --- SCRIPT ---
 
-    def analyze_flyer_image(image_path):
+    class API_model():
+
+        def __init__(self, ModelData, name):
+            self.name = name
+            self.n_calls = 0
+            self.RPM = ModelData['RPM']
+            self.sleeptime = 60 // self.RPM
+            self.rate_limit = ModelData['rateLimit']
+            self.api_url = ModelData['api_url']
+
+        def rate_limit_reached(self):
+            if self.n_calls > self.rate_limit:
+                return True
+            else:
+                return False
+
+    flash_api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key={API_KEY}"
+    pro_api_url =   f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key={API_KEY}'
+
+    API_model_data = {
+        'flash': {'RPM': 10, 'rateLimit': 250, 'api_url':flash_api_url},
+        'pro':   {'RPM': 2,  'rateLimit': 50,  'api_url':pro_api_url}
+    }
+
+    Gem_pro = API_model(API_model_data['pro'], 'Gemini Pro')
+    Gem_flash = API_model(API_model_data['flash'], 'Gemini Flash')
+
+    
+    def save_to_json(data, filename):
+        """Saves a list of data to a JSON file if the list is not empty."""
+        if data:
+            try:
+                with open(filename, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=4, ensure_ascii=False)
+                print(f"Successfully saved {len(data)} items to '{filename}'.")
+            except IOError as e:
+                print(f"Error writing to output file '{filename}': {e}")
+        else:
+            print(f"No data to save for '{filename}'. File not created.")
+
+    def analyze_flyer_image(image_path, model_ver='flash'):
         """
         Analyzes a single flyer image using the Gemini API and returns structured data.
         """
         print(f"Processing image: {image_path}...")
 
-        # 1. Encode the image to base64
         try:
             with open(image_path, "rb") as image_file:
                 image_data = base64.b64encode(image_file.read()).decode('utf-8')
@@ -64,8 +102,6 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
             print(f"  Error reading file: {e}")
             return None
 
-        # 2. Construct the prompt for the Gemini API
-        # This is a highly detailed prompt to ensure the model returns data in the precise format needed.
         prompt = """
         Analyze the provided image of a Norwegian grocery store flyer. Your primary goal is to identify the best deals by focusing on the **price per kilogram (pr. kg) or price per liter (pr. l)**, which is often in smaller text below the product description.
 
@@ -98,8 +134,10 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
         Do not include any text, markdown, or explanations outside of the final JSON object.
         """
 
-        # 3. Prepare the API request payload
-        api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key={API_KEY}"
+        if model_ver == 'flash':
+            model = Gem_flash
+        elif model_ver == 'pro':
+            model = Gem_pro
         
         payload = {
             "contents": [
@@ -122,11 +160,21 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
 
         headers = {'Content-Type': 'application/json'}
 
-        # 4. Make the API call with retries for robustness
         max_retries = 3
+
         for attempt in range(max_retries):
+
+
+            model.n_calls += 1
+
+            
+            if model.rate_limit_reached():
+                print(f'Rate limit reached. {model.name} is unavailable for the remainder of this day.')
+                return None
+
+
             try:
-                response = requests.post(api_url, headers=headers, json=payload, timeout=90)
+                response = requests.post(model.api_url, headers=headers, json=payload, timeout=90)
                 response.raise_for_status()
                 
                 extracted_data = response.json()
@@ -156,6 +204,7 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
                     time.sleep(5)
                 else:
                     return None
+                
         return None
 
 
@@ -227,11 +276,16 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
             print(f"file path {JSON_OUTPUT_FOLDER} already exists, continuing script... \n")
 
 
+        image_files_dict = {}
         image_files = []
         for f in os.listdir(IMAGE_INPUT_FOLDER):
             if f.lower().endswith(('.png', '.jpg', '.jpeg')):
                 for shop in BUTIKKER:
                     if shop in f:
+                        if shop in image_files_dict:
+                            image_files_dict[shop].append(f)
+                        else:
+                            image_files_dict[shop] = [f]
                         image_files.append(f)
                         break
 
@@ -250,50 +304,43 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
             image_files = image_files[:max_imgs-1]
             print(f"Antall bilder er større enn 240. Følgende bilder blir dermed ikke behandlet:\n {excess_img_files}")
 
-        for i, filename in enumerate(image_files):
-            try:
-                parts = os.path.splitext(filename)[0].split('_')
-                store = parts[0]
-                acquired_date = parts[2]
-                page_number = int(parts[3]) + 1
-            except (IndexError, ValueError):
-                print(f"\nSkipping file with invalid name format: {filename} (Expected: 'store_YYYYMMDD.jpg')")
-                continue
 
-            image_path = os.path.join(IMAGE_INPUT_FOLDER, filename)
-            categorized_deals = analyze_flyer_image(image_path)
+        for store, img_file_list in image_files_dict.items():
+            for imgfile in img_file_list:
+                try:
+                    parts = os.path.splitext(imgfile)[0].split('_')
+                    store = parts[0]
+                    acquired_date = parts[2]
+                    page_number = int(parts[3]) + 1
+                except (IndexError, ValueError):
+                    print(f"\nSkipping file with invalid name format: {imgfile} (Expected: 'store_YYYYMMDD.jpg')")
+                    continue
 
-            if categorized_deals:
-                # Iterate through the categories and append data to the master lists
-                for category_key, deals_list in categorized_deals.items():
-                    if category_key in all_deals:
-                        for deal in deals_list:
-                            deal['store'] = store
-                            deal['acquired_date'] = acquired_date
-                            deal['page_number'] = page_number
-                            all_deals[category_key].append(deal)
-                print("  Saving current progress to files...")
-                for category_key, deals_list in all_deals.items():
-                    save_to_json(deals_list, f"{JSON_OUTPUT_FOLDER}/{category_key}.json")
-            
-            if i < len(image_files) - 1:
-                print("  Waiting 2 seconds before next request...")
-                time.sleep(2)
+                image_path = os.path.join(IMAGE_INPUT_FOLDER, imgfile)
 
-        print("\nProcessing complete.")
+                if not Gem_pro.rate_limit_reached():
+                    model_choice = 'pro'
+                    sleeptime = Gem_pro.sleeptime
+                else:
+                    model_choice = 'flash'
+                    sleeptime = Gem_flash.sleeptime
+                categorized_deals = analyze_flyer_image(image_path, model_choice)
 
-    def save_to_json(data, filename):
-        """Saves a list of data to a JSON file if the list is not empty."""
-        if data:
-            try:
-                with open(filename, 'w', encoding='utf-8') as f:
-                    json.dump(data, f, indent=4, ensure_ascii=False)
-                print(f"Successfully saved {len(data)} items to '{filename}'.")
-            except IOError as e:
-                print(f"Error writing to output file '{filename}': {e}")
-        else:
-            print(f"No data to save for '{filename}'. File not created.")
+                if categorized_deals:
+                    for category_key, deals_list in categorized_deals.items():
+                        if category_key in all_deals:
+                            for deal in deals_list:
+                                deal['store'] = store
+                                deal['acquired_date'] = acquired_date
+                                deal['page_number'] = page_number
+                                all_deals[category_key].append(deal)
+                    print("  Saving current progress to files...")
+                    for category_key, deals_list in all_deals.items():
+                        save_to_json(deals_list, f"{JSON_OUTPUT_FOLDER}/{category_key}.json")
 
+                time.sleep(sleeptime)
+
+            print("\nProcessing complete.")
 
 
     process_all_flyers()

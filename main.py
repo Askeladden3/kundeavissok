@@ -7,7 +7,7 @@ import time
 from networking import updateWebsite, create_frontend_files, updateWebsite_testing, zip_and_saveFiles
 
 def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = False):
-    Alle_butikker = ['rema-1000', 'kiwi', 'extra','bunnpris','meny','coop-prix','joker','spar','coop-mega','coop-marked','obs']
+    Alle_butikker = ['meny', 'rema-1000', 'kiwi', 'extra','bunnpris','coop-prix','joker','spar','coop-mega','coop-marked','obs']
     #TODO 1: om ny_uke = True bør programmet likevel sjekke om kundeavisbilder er lastet ned fra før, og at om de er det så hopper den over nedlastningen
     if not BUTIKKER:
         BUTIKKER = Alle_butikker
