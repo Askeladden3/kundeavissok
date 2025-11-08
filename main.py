@@ -37,9 +37,10 @@ def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = F
 
     if ny_uke:
         create_frontend_files(uke, Alle_butikker, nedlastede_butikker)
-        updateWebsite(uke)
+        #updateWebsite(uke)
+        updateWebsite_testing(uke)
         zip_and_saveFiles(dato)
-        #updateWebsite_testing(uke)
+
 
 
 
@@ -47,7 +48,9 @@ def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = F
 #EKSEMPELKJØRINGER:
 
 #OPPDATER DATABASE TIL NY UKE (Lager også ny database-fil):
-main(ny_uke=True, append_til_JSON = False)
+#main(ny_uke=True, append_til_JSON = False)
+
+main(BUTIKKER=['kiwi'])
 
 #LAGE NY DATABASE-FIL / KJØR JSONtoSQlite:
 #main(skip_parsing=True)
