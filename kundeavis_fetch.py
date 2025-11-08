@@ -167,7 +167,7 @@ def download_kundeaviser(dato, kundeaviser_urls):
     def download_from_url(url,save_path):
         try:
             response = requests.get(url, stream=True)
-            response.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
+            response.raise_for_status()
 
             with open(save_path, 'wb') as file:
                 for chunk in response.iter_content(chunk_size=8192):

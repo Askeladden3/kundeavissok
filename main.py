@@ -50,7 +50,7 @@ def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = F
 #OPPDATER DATABASE TIL NY UKE (Lager også ny database-fil):
 #main(ny_uke=True, append_til_JSON = False)
 
-main(BUTIKKER=['kiwi'])
+main(BUTIKKER=['kiwi'], ny_uke=True, append_til_JSON = False)
 
 #LAGE NY DATABASE-FIL / KJØR JSONtoSQlite:
 #main(skip_parsing=True)
