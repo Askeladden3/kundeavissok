@@ -3,7 +3,6 @@ from Gemini_Parser import Gemini_parser
 from fromJSONtoSQlite import JSONtoSQlite
 from kundeavis_fetch import fetch_kundeavis, download_kundeaviser
 import datetime
-import time
 from networking import updateWebsite, create_frontend_files, updateWebsite_testing, zip_and_saveFiles
 
 def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = False):
@@ -36,8 +35,8 @@ def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = F
 
     if ny_uke:
         create_frontend_files(uke, Alle_butikker, nedlastede_butikker)
-        #updateWebsite(uke)
-        updateWebsite_testing(uke)
+        updateWebsite(uke)
+        #updateWebsite_testing(uke)
         zip_and_saveFiles(dato)
 
 

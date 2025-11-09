@@ -328,7 +328,7 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
 
                 if analysis_time < model.sleeptime:
                     time.sleep(model.sleeptime - analysis_time)
-                    print(f'API is analyzing too quickly. Have to sleep for {model.sleeptime - analysis_time : .3f}s')
+                    print(f'API is analyzing too quickly. Have to sleep for {model.sleeptime - analysis_time :.3f}s')
 
                 if categorized_deals:
                     for category_key, deals_list in categorized_deals.items():
