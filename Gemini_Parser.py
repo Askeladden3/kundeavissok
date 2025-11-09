@@ -51,8 +51,10 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
 
     class API_model():
 
-        def __init__(self, ModelData, name):
-            self.name = name
+        def __init__(self, ModelData, id):
+            ModelData = ModelData[id]
+            self.id = id
+            self.name = ModelData['name']
             self.n_calls = 0
             self.RPM = ModelData['RPM']
             self.sleeptime = 60 // self.RPM
@@ -69,12 +71,12 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
     pro_api_url =   f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key={API_KEY}'
 
     API_model_data = {
-        'flash': {'RPM': 10, 'rateLimit': 250, 'api_url':flash_api_url},
-        'pro':   {'RPM': 2,  'rateLimit': 50,  'api_url':pro_api_url}
+        'flash': {'name': 'Gemini Pro', 'RPM': 10, 'rateLimit': 250, 'api_url':flash_api_url},
+        'pro':   {'name': 'Gemini Flash', 'RPM': 2,  'rateLimit': 50,  'api_url':pro_api_url}
     }
 
-    Gem_pro = API_model(API_model_data['pro'], 'Gemini Pro')
-    Gem_flash = API_model(API_model_data['flash'], 'Gemini Flash')
+    Gem_pro = API_model(API_model_data, 'pro')
+    Gem_flash = API_model(API_model_data, 'flash')
 
     
     def save_to_json(data, filename):
@@ -89,7 +91,7 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
         else:
             print(f"No data to save for '{filename}'. File not created.")
 
-    def analyze_flyer_image(image_path, model_ver='flash'):
+    def analyze_flyer_image(image_path, model):
         """
         Analyzes a single flyer image using the Gemini API and returns structured data.
         """
@@ -134,10 +136,6 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
         Do not include any text, markdown, or explanations outside of the final JSON object.
         """
 
-        if model_ver == 'flash':
-            model = Gem_flash
-        elif model_ver == 'pro':
-            model = Gem_pro
         
         payload = {
             "contents": [
@@ -166,12 +164,15 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
 
 
             model.n_calls += 1
-            print('Kaller API')
 
             
             if model.rate_limit_reached():
-                print(f'Rate limit reached. {model.name} is unavailable for the remainder of this day.')
-                return None
+                if model.id == 'pro':
+                    print(f'Rate limit for Pro reached. Switching to Gemini Flash.')
+                    model = Gem_flash
+                elif model.id =='flash':
+                    print('Rate limit for flash reached. No further images can be processed.')
+                    return None
 
 
             try:
@@ -300,12 +301,8 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
 
         print(f"{len(image_files)} bilder skal behandles.")
 
-        if len(image_files) > max_imgs:
-            excess_img_files = image_files[max_imgs-1:]
-            image_files = image_files[:max_imgs-1]
-            print(f"Antall bilder er større enn 240. Følgende bilder blir dermed ikke behandlet:\n {excess_img_files}")
 
-
+        time_prev = time.perf_counter()
         for store, img_file_list in image_files_dict.items():
             for imgfile in img_file_list:
                 try:
@@ -320,12 +317,18 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
                 image_path = os.path.join(IMAGE_INPUT_FOLDER, imgfile)
 
                 if not Gem_pro.rate_limit_reached():
-                    model_choice = 'pro'
-                    sleeptime = Gem_pro.sleeptime
+                    model = Gem_pro
                 else:
-                    model_choice = 'flash'
-                    sleeptime = Gem_flash.sleeptime
-                categorized_deals = analyze_flyer_image(image_path, model_choice)
+                    model = Gem_flash
+
+                
+                categorized_deals = analyze_flyer_image(image_path, model)
+                time_new = time.perf_counter()
+                analysis_time = time_new - time_prev
+
+                if analysis_time < model.sleeptime:
+                    time.sleep(model.sleeptime - analysis_time)
+                    print(f'API is analyzing too quickly. Have to sleep for {model.sleeptime - analysis_time : .3f}s')
 
                 if categorized_deals:
                     for category_key, deals_list in categorized_deals.items():
@@ -338,8 +341,6 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
                     print("  Saving current progress to files...")
                     for category_key, deals_list in all_deals.items():
                         save_to_json(deals_list, f"{JSON_OUTPUT_FOLDER}/{category_key}.json")
-
-                time.sleep(sleeptime)
 
             print("\nProcessing complete.")
 

@@ -19,15 +19,12 @@ def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = F
 
     dato = [current_date, år, uke]
 
-    print('Her skjer det nokka')
-
 
     if ny_uke:
         avisurls = fetch_kundeavis(BUTIKKER, dato, refresh_aviser = True)
         if avisurls:
             download_kundeaviser(dato, avisurls)
-    
-    print('Avis_fetching fungerer')
+
     write_mode = 'add'
 
     if not append_til_JSON:
@@ -50,9 +47,8 @@ def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = F
 #EKSEMPELKJØRINGER:
 
 #OPPDATER DATABASE TIL NY UKE (Lager også ny database-fil):
-#main(ny_uke=True, append_til_JSON = False)
+main(ny_uke=True, append_til_JSON = False)
 
-main(BUTIKKER=['kiwi'], ny_uke=True, append_til_JSON = False)
 
 #LAGE NY DATABASE-FIL / KJØR JSONtoSQlite:
 #main(skip_parsing=True)
