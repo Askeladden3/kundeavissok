@@ -337,6 +337,7 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
                                 deal['store'] = store
                                 deal['acquired_date'] = acquired_date
                                 deal['page_number'] = page_number
+                                deal['AI_model_used'] = model.id
                                 all_deals[category_key].append(deal)
                     print("  Saving current progress to files...")
                     for category_key, deals_list in all_deals.items():
