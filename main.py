@@ -5,11 +5,15 @@ from kundeavis_fetch import fetch_kundeavis, download_kundeaviser
 import datetime
 from networking import updateWebsite, create_frontend_files, updateWebsite_testing, zip_and_saveFiles
 
-def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = False):
+def main(params):
+
     Alle_butikker = ['meny', 'rema-1000', 'kiwi', 'extra','bunnpris','coop-prix','joker','spar','coop-mega','coop-marked','obs']
     #TODO 1: om ny_uke = True bør programmet likevel sjekke om kundeavisbilder er lastet ned fra før, og at om de er det så hopper den over nedlastningen
-    if not BUTIKKER:
+    if not params['BUTIKKER']:
         BUTIKKER = Alle_butikker
+    else:
+        BUTIKKER = params['BUTIKKER']
+    
 
 
     current_date = datetime.datetime.now()
@@ -19,34 +23,44 @@ def main(ny_uke = False, BUTIKKER=None, append_til_JSON = True, skip_parsing = F
     dato = [current_date, år, uke]
 
 
-    if ny_uke:
+    if params['download_kundeaviser']:
         avisurls = fetch_kundeavis(BUTIKKER, dato, refresh_aviser = True)
         if avisurls:
             download_kundeaviser(dato, avisurls)
 
-    write_mode = 'add'
 
-    if not append_til_JSON:
-        write_mode = 'replace'
-    
-    if not skip_parsing:
-        Gemini_parser(BUTIKKER, dato, write_mode)
+    if not params['skip_parsing']:
+        Gemini_parser(BUTIKKER, dato, params['add_temp_JSON'])
     nedlastede_butikker = JSONtoSQlite(dato)
 
-    if ny_uke:
-        create_frontend_files(uke, Alle_butikker, nedlastede_butikker)
+
+    create_frontend_files(uke, Alle_butikker, nedlastede_butikker)
+
+    if params['test_mode']:
+        updateWebsite_testing(uke)
+
+    elif params['updateWebsite']:
         updateWebsite(uke)
-        #updateWebsite_testing(uke)
+
+    if params['saveFiles']:
         zip_and_saveFiles(dato)
 
 
 
-
+ny_uke_standard = {
+    'BUTIKKER': None,
+    'download_kundeaviser': True,
+    'test_mode': False,
+    'add_temp_JSON': True, 
+    'skip_parsing': False,
+    'saveFiles': True,
+    'updateWebsite': True
+}
 
 #EKSEMPELKJØRINGER:
 
 #OPPDATER DATABASE TIL NY UKE (Lager også ny database-fil):
-main(ny_uke=True, append_til_JSON = False)
+main(ny_uke_standard)
 
 
 #LAGE NY DATABASE-FIL / KJØR JSONtoSQlite:
