@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 
 
 
-def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
+def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False):
     '''Sender API-calls til Gemini Flash 2.5 for å ekstrahere matvarer fra kundeavisene
     
     Har to "moduser" for å lagre data ved:
@@ -22,15 +22,6 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
 
     current_date, år, UKE = DATO
     max_imgs = 240
-
-
-    if write_mode == 'add':
-        overwrite = False
-    elif write_mode == 'replace':
-        overwrite = True
-    else:
-        raise ValueError("Ikke godkjent write_mode")
-
 
     API_KEY = os.getenv("GEMINI_API_KEY")
 
@@ -216,7 +207,7 @@ def Gemini_parser(BUTIKKER, DATO, write_mode = 'add'):
         consolidated results to multiple JSON files based on deal type.
         """
 
-        if not overwrite:
+        if add_tmp_json:
 
             json_url = "https://askhf.folk.ntnu.no/temp_JSON/"
 
