@@ -49,9 +49,9 @@ def main(params):
 
 ny_uke_standard = {
     'BUTIKKER': None,
-    'download_kundeaviser': True,
+    'download_kundeaviser': False,
     'test_mode': False,
-    'add_temp_JSON': True, 
+    'add_temp_JSON': False, 
     'skip_parsing': False,
     'saveFiles': True,
     'updateWebsite': True
