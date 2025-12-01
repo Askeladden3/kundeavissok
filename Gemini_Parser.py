@@ -185,18 +185,16 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False):
 
             except requests.exceptions.RequestException as e:
                 print(f"  API request failed (attempt {attempt + 1}/{max_retries}): {e}")
-
                 #Hvis APIen sender kode 429 ("Rate limit reached") så skal modellen byttes
-                if e["error"] == 429:
+                if e.response is not None and e.request.status_code == 429:
                     model.r_calls = model.rate_limit
+                    print(f"Error 429 motatt. Slutter nå å bruke {model.name}.")
                 if attempt < max_retries - 1:
                     time.sleep(5)
                 else:
                     print(f"  Final API request failed. Response: {response.text if 'response' in locals() else 'No response'}")
                     return None
             except (KeyError, IndexError, json.JSONDecodeError, ValueError) as e:
-                if e["error"] == 429:
-                    model.r_calls = model.rate_limit
                 print(f"  Error parsing API response (attempt {attempt + 1}/{max_retries}): {e}")
                 print(f"  Received data: {response.text if 'response' in locals() else 'No response'}")
                 if attempt < max_retries - 1:
