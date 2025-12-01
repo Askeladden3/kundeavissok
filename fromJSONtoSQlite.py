@@ -11,7 +11,10 @@ def JSONtoSQlite(dato):
 
     curr_date, år, UKE = dato
 
-    os.mkdir('temp_output/databaser')
+    try:
+        os.mkdir('temp_output/databaser')
+    except:
+        pass
     db_file = f'temp_output/databaser/kundeavis_{UKE}.db'
 
     def EXECUTE_TABLES(item, table_name):
@@ -141,7 +144,7 @@ def JSONtoSQlite(dato):
     for entry in os.scandir(JSON_dirpath):
         if entry.is_file():
             json_file = entry.path
-            table_name = json_file.split('/')[2][:-5]
+            table_name = json_file.split('\\')[-1][:-5]
 
             conn = sqlite3.connect(db_file)
             cursor = conn.cursor()
@@ -189,5 +192,3 @@ def JSONtoSQlite(dato):
             conn.commit()
 
     return unique_stores
-
-    

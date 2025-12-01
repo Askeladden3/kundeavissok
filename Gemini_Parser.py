@@ -47,6 +47,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False):
             self.id = id
             self.name = ModelData['name']
             self.n_calls = 0
+            self.is_exhausted = False
             self.RPM = ModelData['RPM']
             self.sleeptime = 60 // self.RPM
             self.rate_limit = ModelData['rateLimit']
@@ -54,6 +55,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False):
 
         def rate_limit_reached(self):
             if self.n_calls > self.rate_limit:
+                self.is_exhausted = True
                 return True
             else:
                 return False
@@ -62,8 +64,8 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False):
     pro_api_url =   f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key={API_KEY}'
 
     API_model_data = {
-        'flash': {'name': 'Gemini Pro', 'RPM': 10, 'rateLimit': 250, 'api_url':flash_api_url},
-        'pro':   {'name': 'Gemini Flash', 'RPM': 2,  'rateLimit': 50,  'api_url':pro_api_url}
+        'pro': {'name': 'Gemini Pro', 'RPM': 2, 'rateLimit': 50, 'api_url':pro_api_url},
+        'flash':   {'name': 'Gemini Flash', 'RPM': 10,  'rateLimit': 250,  'api_url':flash_api_url}
     }
 
     Gem_pro = API_model(API_model_data, 'pro')
@@ -186,8 +188,8 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False):
             except requests.exceptions.RequestException as e:
                 print(f"  API request failed (attempt {attempt + 1}/{max_retries}): {e}")
                 #Hvis APIen sender kode 429 ("Rate limit reached") så skal modellen byttes
-                if e.response is not None and e.request.status_code == 429:
-                    model.r_calls = model.rate_limit
+                if e.response is not None and e.response.status_code == 429:
+                    model.is_exhausted = True
                     print(f"Error 429 motatt. Slutter nå å bruke {model.name}.")
                 if attempt < max_retries - 1:
                     time.sleep(5)
@@ -297,7 +299,8 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False):
         print(f"{len(image_files)} bilder skal behandles.")
 
 
-        time_prev = time.perf_counter()
+
+        model = Gem_pro
         for store, img_file_list in image_files_dict.items():
             for imgfile in img_file_list:
                 try:
@@ -311,12 +314,14 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False):
 
                 image_path = os.path.join(IMAGE_INPUT_FOLDER, imgfile)
 
-                if not Gem_pro.rate_limit_reached():
-                    model = Gem_pro
-                else:
-                    model = Gem_flash
+                if model.is_exhausted:
+                    if model.id == 'pro':
+                        print(f'{model.name} er oppbrukt. Bytter til Gemini Flash.')
+                        model = Gem_flash
+                    elif model.id == 'flash':
+                        print('Alle modeller er oppbrukt. Ingen flere bilder kan analyseres.')
 
-                
+                time_prev = time.perf_counter()
                 categorized_deals = analyze_flyer_image(image_path, model)
                 time_new = time.perf_counter()
                 analysis_time = time_new - time_prev
