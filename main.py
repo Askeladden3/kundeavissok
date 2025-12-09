@@ -30,7 +30,7 @@ def main(params):
 
 
     if not params['skip_parsing']:
-        Gemini_parser(BUTIKKER, dato, params['add_temp_JSON'])
+        Gemini_parser(BUTIKKER, dato, params['add_temp_JSON'], params['batch_processing'])
     nedlastede_butikker = JSONtoSQlite(dato)
 
 
@@ -48,13 +48,15 @@ def main(params):
 
 
 ny_uke_standard = {
+    'test_mode': False,
     'BUTIKKER': None,
     'download_kundeaviser': True,
-    'test_mode': False,
-    'add_temp_JSON': False, 
     'skip_parsing': False,
+    'batch_processing':True,
+    'add_temp_JSON': False, 
     'saveFiles': True,
-    'updateWebsite': True
+    'updateWebsite': False
+    
 }
 
 #EKSEMPELKJØRINGER:

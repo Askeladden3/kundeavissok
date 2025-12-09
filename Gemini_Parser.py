@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 
 
 
-def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False):
+def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
     '''Sender API-calls til Gemini Flash 2.5 for å ekstrahere matvarer fra kundeavisene
     
     Har to "moduser" for å lagre data ved:
@@ -83,6 +83,176 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False):
                 print(f"Error writing to output file '{filename}': {e}")
         else:
             print(f"No data to save for '{filename}'. File not created.")
+
+    class flyer():
+        '''Generell flyer-klasse. Tar inn store, acquired_date, page_number, category_key og img_path.
+        
+        Har metode for å produsere ferdig "deals"-objekt som videresendes til save_json
+        '''
+
+        def __init__(self, prop):
+            self.store = prop['store']
+            self.acquired_date = prop['acquired_date']
+            self.page_number = prop['page_number']
+            self.category_key = prop['category_key']
+            self.img_path = prop['img_path']
+
+        def create_dealsobj(self):
+            processed_deals = {}
+            if hasattr(self, 'categorized_deal') and hasattr(self, 'AI_model_used'):
+                for category_key, category_deals in self.categorized_deal:
+                    processed_deals[category_key] = []
+                    for deal in category_deals:
+                        deal['store'] = self.store
+                        deal['acquired_date'] = self.acquired_date
+                        deal['page_number'] = self.page_number
+                        deal['AI_model_used'] = self.AI_model_used
+                        processed_deals[category_key].append(deal)
+                return processed_deals
+            else:
+                return None
+
+    def analyze_flyer_batch(flyer_batch, model):
+        image_parts = []
+    
+        # 1. Iterate through the list of paths and encode each image
+        for flyer_page in flyer_batch:
+            try:
+                with open(flyer_page.img_path, "rb") as image_file:
+                    # Standardize mimeType if needed, or detect dynamically
+                    flyer_page.image_data = base64.b64encode(image_file.read()).decode('utf-8')
+                    
+                    image_parts.append({
+                        "inlineData": {
+                            "mimeType": "image/jpeg", # Ensure this matches your files (png/jpeg)
+                            "data": flyer_page.image_data
+                        }
+                    })
+            except IOError as e:
+                print(f"Skipping file due to error: {flyer_page.img_path} - {e}")
+                continue # Skip bad files so the batch doesn't fail entirely
+
+        if not image_parts:
+            print("No valid images to process.")
+            return None
+
+        # 2. Updated Prompt for Batch Processing
+        # We explicitly ask for a JSON LIST to handle multiple outputs.
+        prompt = """
+        Analyze the provided images of Norwegian grocery store flyers. Process each image independently in the order they are provided.
+        
+        Your goal is to identify deals, focusing on **price per kilogram (pr. kg) or price per liter (pr. l)**, which is often in smaller text below the product description.
+
+        **OUTPUT FORMAT:**
+        Return a single valid **JSON Array** (list). 
+        Each item in the array must correspond to one image and contain the following fields:
+        - `image_index`: The sequential number of the image (0, 1, 2...).
+        - `deals`: A JSON array containing the five categorized deal types below.
+
+        **DEAL CATEGORIES (inside the `deals` object):**
+        
+        1.  `price_deals`: Standard price reductions.
+            - `name`: Product name.
+            - `price_per_unit`: **The most important value.** (decimal). Look for "pr. kg" or "pr. l".
+            - `total_price`: Total sale price (decimal).
+            - `total_mass`: Total weight/volume (decimal, e.g. 0.5 for 500g), or null.
+            - `unit`: "kg" or "l".
+
+        2.  `percentage_deals`: Percentage off (e.g., "-30%").
+            - `name`: Product name.
+            - `percentage_off`: Discount percentage (number).
+
+        3.  `three_for_two_deals`: ONLY "3 for 2" offers.
+            - `name`: Product name.
+
+        4.  `multibuy_for_price_deals`: "X for Y kr" offers (NOT "3 for 2").
+            - `name`: Product name.
+            - `amount_of_wares`: Number of items (X).
+            - `set_price`: Total price (Y).
+
+        5.  `kroner_off_deals`: Fixed amount subtracted (e.g., "-5 kr").
+            - `name`: Product name.
+            - `amount_subtracted`: Amount subtracted (number).
+
+        Do not include any text or markdown outside the JSON Array.
+        """
+
+        # 3. Construct Payload with Prompt + All Images
+        payload = {
+            "contents": [
+                {
+                    "parts": [{"text": prompt}] + image_parts 
+                }
+            ],
+            "generationConfig": {
+                "responseMimeType": "application/json",
+                # Optional: Increase token count if batch size is large
+                # "maxOutputTokens": 8192 
+            }
+        }
+
+        headers = {'Content-Type': 'application/json'}
+
+        max_retries = 3
+
+        for attempt in range(max_retries):
+
+
+            model.n_calls += 1
+
+            
+            if model.rate_limit_reached():
+                if model.id == 'pro':
+                    print(f'Rate limit for Pro reached. Switching to Gemini Flash.')
+                    model = Gem_flash
+                elif model.id =='flash':
+                    print('Rate limit for flash reached. No further images can be processed.')
+                    return None
+
+
+            try:
+                response = requests.post(model.api_url, headers=headers, json=payload, timeout=90)
+                response.raise_for_status()
+                
+                extracted_data = response.json()
+                
+                json_text = extracted_data['candidates'][0]['content']['parts'][0]['text']
+                categorized_deals = json.loads(json_text)
+
+                for i, analyzed_flyer in categorized_deals.items():
+                    flyer_batch[i].categorized_deal = analyzed_flyer
+                    flyer_batch[i].AI_model_used = model.id
+
+                #TODO: Modifiser kode til å gå igjennom alle entries i json-arrayen:
+                '''# Validate the structure
+                required_keys = ['price_deals', 'percentage_deals', 'three_for_two_deals', 'multibuy_for_price_deals', 'kroner_off_deals']
+                if all(k in categorized_deals for k in required_keys):
+                    print(f"  Successfully extracted deals from the image.")
+                    return categorized_deals
+                else:
+                    raise ValueError("Response JSON is missing one or more required keys.")'''
+
+            except requests.exceptions.RequestException as e:
+                print(f"  API request failed (attempt {attempt + 1}/{max_retries}): {e}")
+                #Hvis APIen sender kode 429 ("Rate limit reached") så skal modellen byttes
+                if e.response is not None and e.response.status_code == 429:
+                    model.is_exhausted = True
+                    print(f"Error 429 motatt. Slutter nå å bruke {model.name}.")
+                if attempt < max_retries - 1:
+                    time.sleep(5)
+                else:
+                    print(f"  Final API request failed. Response: {response.text if 'response' in locals() else 'No response'}")
+                    return None
+            except (KeyError, IndexError, json.JSONDecodeError, ValueError) as e:
+                print(f"  Error parsing API response (attempt {attempt + 1}/{max_retries}): {e}")
+                print(f"  Received data: {response.text if 'response' in locals() else 'No response'}")
+                if attempt < max_retries - 1:
+                    time.sleep(5)
+                else:
+                    return None
+                
+        return None
+        
 
     def analyze_flyer_image(image_path, model):
         """
@@ -276,6 +446,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False):
 
 
         image_files_dict = {}
+        batch_image_dict = dict()
         image_files = []
         for f in os.listdir(IMAGE_INPUT_FOLDER):
             if f.lower().endswith(('.png', '.jpg', '.jpeg')):
@@ -285,6 +456,17 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False):
                             image_files_dict[shop].append(f)
                         else:
                             image_files_dict[shop] = [f]
+
+                        prop = {
+                            'store': shop,
+                            'acquired_date': current_date.date(),
+                            'page_number': f.split('_')[-1],
+                            'img_path': f
+                            }
+                        if shop in batch_image_dict:
+                            batch_image_dict[shop].append(flyer(prop))
+                        else:
+                            batch_image_dict[shop] = list(flyer(prop))
                         image_files.append(f)
                         break
 
@@ -297,53 +479,73 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False):
         
 
         print(f"{len(image_files)} bilder skal behandles.")
-
-
-
         model = Gem_pro
-        for store, img_file_list in image_files_dict.items():
-            for imgfile in img_file_list:
-                try:
-                    parts = os.path.splitext(imgfile)[0].split('_')
-                    store = parts[0]
-                    acquired_date = parts[2]
-                    page_number = int(parts[3]) + 1
-                except (IndexError, ValueError):
-                    print(f"\nSkipping file with invalid name format: {imgfile} (Expected: 'store_YYYYMMDD.jpg')")
-                    continue
 
-                image_path = os.path.join(IMAGE_INPUT_FOLDER, imgfile)
 
-                if model.is_exhausted:
-                    if model.id == 'pro':
-                        print(f'{model.name} er oppbrukt. Bytter til Gemini Flash.')
-                        model = Gem_flash
-                    elif model.id == 'flash':
-                        print('Alle modeller er oppbrukt. Ingen flere bilder kan analyseres.')
 
-                time_prev = time.perf_counter()
-                categorized_deals = analyze_flyer_image(image_path, model)
-                time_new = time.perf_counter()
-                analysis_time = time_new - time_prev
+        if batch_processing:
+            for store, flyer_batch in batch_image_dict:
+                analyze_flyer_batch(flyer_batch)
 
-                if analysis_time < model.sleeptime:
-                    time.sleep(model.sleeptime - analysis_time)
-                    print(f'API is analyzing too quickly. Have to sleep for {model.sleeptime - analysis_time :.3f}s')
-
-                if categorized_deals:
-                    for category_key, deals_list in categorized_deals.items():
+                for flyer in flyer_batch:
+                    processed_deal = flyer.create_dealsobj()
+                    for category_key, deals_list in processed_deal.items():
                         if category_key in all_deals:
                             for deal in deals_list:
-                                deal['store'] = store
-                                deal['acquired_date'] = acquired_date
-                                deal['page_number'] = page_number
-                                deal['AI_model_used'] = model.id
                                 all_deals[category_key].append(deal)
-                    print("  Saving current progress to files...")
-                    for category_key, deals_list in all_deals.items():
-                        save_to_json(deals_list, f"{JSON_OUTPUT_FOLDER}/{category_key}.json")
+                print("  Saving current progress to files...")
+                for category_key, deals_list in all_deals.items():
+                    save_to_json(deals_list, f"{JSON_OUTPUT_FOLDER}/{category_key}.json")
+        else:
+            for store, img_file_list in image_files_dict.items():
+                full_image_paths = list()
+                for imgfile in img_file_list:
+                    try:
+                        parts = os.path.splitext(imgfile)[0].split('_')
+                        store = parts[0]
+                        acquired_date = parts[2]
+                        page_number = int(parts[3])
+                    except (IndexError, ValueError):
+                        print(f"\nSkipping file with invalid name format: {imgfile} (Expected: 'store_YYYYMMDD.jpg')")
+                        continue
 
-            print("\nProcessing complete.")
+                    image_path = os.path.join(IMAGE_INPUT_FOLDER, imgfile)
+
+                    full_image_paths.list(image_path)
+
+                    for full_imgpath in full_image_paths:
+                        if model.is_exhausted:
+                            if model.id == 'pro':
+                                print(f'{model.name} er oppbrukt. Bytter til Gemini Flash.')
+                                model = Gem_flash
+                            elif model.id == 'flash':
+                                print('Alle modeller er oppbrukt. Ingen flere bilder kan analyseres.')
+                        
+
+
+                        time_prev = time.perf_counter()
+                        categorized_deals = analyze_flyer_image(full_imgpath, model)
+                        time_new = time.perf_counter()
+                        analysis_time = time_new - time_prev
+
+                        if analysis_time < model.sleeptime:
+                            time.sleep(model.sleeptime - analysis_time)
+                            print(f'API is analyzing too quickly. Have to sleep for {model.sleeptime - analysis_time :.3f}s')
+
+                        if categorized_deals:
+                            for category_key, deals_list in categorized_deals.items():
+                                if category_key in all_deals:
+                                    for deal in deals_list:
+                                        deal['store'] = store
+                                        deal['acquired_date'] = acquired_date
+                                        deal['page_number'] = page_number
+                                        deal['AI_model_used'] = model.id
+                                        all_deals[category_key].append(deal)
+                            print("  Saving current progress to files...")
+                            for category_key, deals_list in all_deals.items():
+                                save_to_json(deals_list, f"{JSON_OUTPUT_FOLDER}/{category_key}.json")
+
+                print("\nProcessing complete.")
 
 
     process_all_flyers()

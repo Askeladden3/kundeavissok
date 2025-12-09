@@ -183,5 +183,5 @@ def download_kundeaviser(dato, kundeaviser_urls):
         image_urls = value
         butikk = key
         for idx, url in enumerate(image_urls):
-            save_location = f"temp_output/bilder/{butikk}_{år}_{uke}_{idx}.jpg" 
+            save_location = f"temp_output/bilder/{butikk}_{år}_{uke}_{idx+1}.jpg" 
             download_from_url(url, save_location)
