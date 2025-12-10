@@ -9,7 +9,6 @@ def main(params):
 
     Alle_butikker = ['meny', 'rema-1000', 'kiwi', 'extra','bunnpris','coop-prix','joker','spar','coop-mega','coop-marked','obs']
     #TODO 1: om ny_uke = True bør programmet likevel sjekke om kundeavisbilder er lastet ned fra før, og at om de er det så hopper den over nedlastningen
-    #TODO 2: 
     if not params['BUTIKKER']:
         BUTIKKER = Alle_butikker
     else:

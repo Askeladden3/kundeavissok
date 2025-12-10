@@ -2,8 +2,6 @@ import os
 import json
 import base64
 import time
-import datetime
-from datetime import datetime
 import requests
 import sys
 from bs4 import BeautifulSoup
@@ -12,19 +10,14 @@ import math
 
 
 def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, batchsize = 14):
-    '''Sender API-calls til Gemini Flash 2.5 for å ekstrahere matvarer fra kundeavisene
-    
-    Har to "moduser" for å lagre data ved:
-
-    "add" - LEGGER TIL ny data som leses fra kundeaviser på eksisterende JSON-filer 
-    "replace" - SLETTER eksisterende JSON-filer og skaper nye med data som leses fra kundeaviser (standard)
-
-    '''
+    '''Sender API-calls for å ekstrahere matvarer fra kundeavisene'''
 
     current_date, år, UKE = DATO
-    max_imgs = 240
-
     API_KEY = os.getenv("GEMINI_API_KEY")
+
+
+    max_retries = 3
+    required_keys = ['price_deals', 'percentage_deals', 'three_for_two_deals', 'multibuy_for_price_deals', 'kroner_off_deals']
 
     if not API_KEY:
         sys.exit("❌ ERROR: API_KEY not found in environment variables!")
@@ -43,16 +36,16 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
 
     class API_model():
 
-        def __init__(self, ModelData, id):
+        def __init__(self, id, name, RPM, rateLimit, api_url):
             ModelData = ModelData[id]
             self.id = id
-            self.name = ModelData['name']
+            self.name = name
             self.n_calls = 0
             self.is_exhausted = False
-            self.RPM = ModelData['RPM']
+            self.RPM = RPM
             self.sleeptime = 60 // self.RPM
-            self.rate_limit = ModelData['rateLimit']
-            self.api_url = ModelData['api_url']
+            self.rate_limit = rateLimit
+            self.api_url = api_url
 
         def rate_limit_reached(self):
             if self.n_calls > self.rate_limit:
@@ -64,13 +57,8 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
     flash_api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
     pro_api_url =   f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key={API_KEY}'
 
-    API_model_data = {
-        'pro': {'name': 'Gemini Pro', 'RPM': 2, 'rateLimit': 50, 'api_url':pro_api_url},
-        'flash':   {'name': 'Gemini Flash', 'RPM': 10,  'rateLimit': 250,  'api_url':flash_api_url}
-    }
-
-    Gem_pro = API_model(API_model_data, 'pro')
-    Gem_flash = API_model(API_model_data, 'flash')
+    Gem_flash = API_model('flash', 'Gemini Flash', 10, 250, flash_api_url)
+    Gem_pro = API_model('pro', 'Gemini Pro', 2, 50, pro_api_url)
 
     
     def save_to_json(data, filename):
@@ -164,22 +152,10 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
 
         headers = {'Content-Type': 'application/json'}
 
-        max_retries = 3
-
         for attempt in range(max_retries):
 
 
             model.n_calls += 1
-
-            
-            if model.rate_limit_reached():
-                if model.id == 'pro':
-                    print(f'Rate limit for Pro reached. Switching to Gemini Flash.')
-                    model = Gem_flash
-                elif model.id =='flash':
-                    print('Rate limit for flash reached. No further images can be processed.')
-                    return None
-
 
             try:
                 response = requests.post(model.api_url, headers=headers, json=payload, timeout=90)
@@ -193,21 +169,12 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
                 for flyer_content in categorized_deals:
                     i = flyer_content['image_index']
                     flyer_batch[i].AI_model_used = model.id
-                    flyer_batch[i].categorized_deal = flyer_content['deals']
-                
-                print(f'Deals successfully extracted from batch (store {flyer_batch[0].store})')
+                    if all(k in flyer_content['deals'] for k in required_keys):
+                        flyer_batch[i].categorized_deal = flyer_content['deals']
+                    else:
+                        print(f'\nUgyldig struktur på følgende bilde: {flyer_batch[i].img_path}. Hoppes over.')
+                print(f'Deals successfully extracted from batch (butikk til første og siste element i batch: {flyer_batch[0].store} | {flyer_batch[-1].store})')
                 return None
-
-
-
-                #TODO: Modifiser kode til å gå igjennom alle entries i json-arrayen:
-                '''# Validate the structure
-                required_keys = ['price_deals', 'percentage_deals', 'three_for_two_deals', 'multibuy_for_price_deals', 'kroner_off_deals']
-                if all(k in categorized_deals for k in required_keys):
-                    print(f"  Successfully extracted deals from the image.")
-                    return categorized_deals
-                else:
-                    raise ValueError("Response JSON is missing one or more required keys.")'''
 
             except requests.exceptions.RequestException as e:
                 print(f"  API request failed (attempt {attempt + 1}/{max_retries}): {e}")
@@ -305,16 +272,6 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
 
             model.n_calls += 1
 
-            
-            if model.rate_limit_reached():
-                if model.id == 'pro':
-                    print(f'Rate limit for Pro reached. Switching to Gemini Flash.')
-                    model = Gem_flash
-                elif model.id =='flash':
-                    print('Rate limit for flash reached. No further images can be processed.')
-                    return None
-
-
             try:
                 response = requests.post(model.api_url, headers=headers, json=payload, timeout=90)
                 response.raise_for_status()
@@ -324,8 +281,6 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
                 json_text = extracted_data['candidates'][0]['content']['parts'][0]['text']
                 categorized_deals = json.loads(json_text)
 
-                # Validate the structure
-                required_keys = ['price_deals', 'percentage_deals', 'three_for_two_deals', 'multibuy_for_price_deals', 'kroner_off_deals']
                 if all(k in categorized_deals for k in required_keys):
                     print(f"  Successfully extracted deals from the image.")
                     flyer.categorized_deal = categorized_deals
@@ -466,7 +421,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
 
 
         if batch_processing:
-            batched_flyer_list = np.array_split(full_flyer_list, math.ceil(len(full_flyer_list/batchsize)))
+            batched_flyer_list = np.array_split(full_flyer_list, math.ceil(len(full_flyer_list)/batchsize))
             for flyer_batch in batched_flyer_list:
                 analyze_flyer_batch(flyer_batch, model)
                 for flyer in flyer_batch:
@@ -485,14 +440,6 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
             for store, flyer_batch in batch_image_dict.items():
                 print(f'Analyserer nå butikken: {store}')
                 for flyer in flyer_batch:
-                    if model.is_exhausted:
-                        if model.id == 'pro':
-                            print(f'{model.name} er oppbrukt. Bytter til Gemini Flash.')
-                            model = Gem_flash
-                        elif model.id == 'flash':
-                            print('Alle modeller er oppbrukt. Ingen flere bilder kan analyseres.')
-                            return None
-                    
                     analyze_flyer(flyer, model)
                     if hasattr(flyer, "categorized_deal") and flyer.categorized_deal:
                         time_prev = time.perf_counter()
