@@ -102,14 +102,13 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
                     })
             except IOError as e:
                 print(f"Skipping file due to error: {flyer_page.img_path} - {e}")
-                continue # Skip bad files so the batch doesn't fail entirely
+                continue
 
         if not image_parts:
             print("No valid images to process.")
             return None
 
-        # 2. Updated Prompt for Batch Processing
-        # We explicitly ask for a JSON LIST to handle multiple outputs.
+
         prompt = """
         Analyze the provided images of Norwegian grocery store flyers. Process each image independently in the order they are provided.
         
@@ -149,7 +148,6 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
         Do not include any text or markdown outside the JSON Array.
         """
 
-        # 3. Construct Payload with Prompt + All Images
         payload = {
             "contents": [
                 {
@@ -232,14 +230,14 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
         return None
         
 
-    def analyze_flyer_image(image_path, model):
+    def analyze_flyer(flyer, model):
         """
         Analyzes a single flyer image using the Gemini API and returns structured data.
         """
-        print(f"Processing image: {image_path}...")
+        print(f"Processing image: {flyer.img_path}...")
 
         try:
-            with open(image_path, "rb") as image_file:
+            with open(flyer.img_path, "rb") as image_file:
                 image_data = base64.b64encode(image_file.read()).decode('utf-8')
         except IOError as e:
             print(f"  Error reading file: {e}")
@@ -329,6 +327,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
                 required_keys = ['price_deals', 'percentage_deals', 'three_for_two_deals', 'multibuy_for_price_deals', 'kroner_off_deals']
                 if all(k in categorized_deals for k in required_keys):
                     print(f"  Successfully extracted deals from the image.")
+                    flyer.categorized_deal = categorized_deals
                     return categorized_deals
                 else:
                     raise ValueError("Response JSON is missing one or more required keys.")
@@ -387,6 +386,15 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
                                 processed_deals[category_key].append(deal)
                         return processed_deals
                 return None
+            
+        
+        all_deals = {
+                'price_deals': [],
+                'percentage_deals': [],
+                'three_for_two_deals': [],
+                'multibuy_for_price_deals': [],
+                'kroner_off_deals': []
+            }
 
         if add_tmp_json:
 
@@ -403,39 +411,13 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
                     r = requests.get(file_url)
                     with open(f'{JSON_OUTPUT_FOLDER}/{href}', "wb") as f:
                         f.write(r.content)
-            with open(f'{JSON_OUTPUT_FOLDER}/kroner_off_deals.json', 'r', encoding='utf-8') as f:
-                kroner_off_deals = json.load(f)
-            with open(f'{JSON_OUTPUT_FOLDER}/multibuy_for_price_deals.json', 'r', encoding='utf-8') as f:
-                multibuy_for_price_deals = json.load(f)
-            with open(f'{JSON_OUTPUT_FOLDER}/percentage_deals.json', 'r', encoding='utf-8') as f:
-                percentage_deals = json.load(f)
-            with open(f'{JSON_OUTPUT_FOLDER}/price_deals.json', 'r', encoding='utf-8') as f:
-                price_deals = json.load(f)
-            with open(f'{JSON_OUTPUT_FOLDER}/three_for_two_deals.json', 'r', encoding='utf-8') as f:
-                three_for_two_deals = json.load(f)
 
-            all_deals = {
-                'price_deals': price_deals,
-                'percentage_deals': percentage_deals,
-                'three_for_two_deals': three_for_two_deals,
-                'multibuy_for_price_deals': multibuy_for_price_deals,
-                'kroner_off_deals': kroner_off_deals
-            }
+            for category in all_deals.keys():
+                with open(f'{JSON_OUTPUT_FOLDER}/{category}.json', 'r', encoding='utf-8') as f:
+                    all_deals[category] = json.load(f)
 
-            print(f"Antall entries i price_deals er {len(price_deals)}. Ser det rett ut? \n\n")
-            time.sleep(4)
-
-            
-
-        else:
-            all_deals = {
-                'price_deals': [],
-                'percentage_deals': [],
-                'three_for_two_deals': [],
-                'multibuy_for_price_deals': [],
-                'kroner_off_deals': []
-            }
-
+            print(f"Antall entries i price_deals er {len(all_deals['price_deals'])}. Ser det rett ut? \n\n")
+            time.sleep(5)
 
         
         if not os.path.exists(IMAGE_INPUT_FOLDER):
@@ -501,56 +483,43 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
                 print("  Saving current progress to files...")
                 for category_key, deals_list in all_deals.items():
                     save_to_json(deals_list, f"{JSON_OUTPUT_FOLDER}/{category_key}.json")
+
+
         else:
-            for store, img_file_list in image_files_dict.items():
-                full_image_paths = list()
-                for imgfile in img_file_list:
-                    try:
-                        parts = os.path.splitext(imgfile)[0].split('_')
-                        store = parts[0]
-                        acquired_date = parts[2]
-                        page_number = int(parts[3])
-                    except (IndexError, ValueError):
-                        print(f"\nSkipping file with invalid name format: {imgfile} (Expected: 'store_YYYYMMDD.jpg')")
-                        continue
-
-                    image_path = os.path.join(IMAGE_INPUT_FOLDER, imgfile)
-
-                    full_image_paths.list(image_path)
-
-                    for full_imgpath in full_image_paths:
-                        if model.is_exhausted:
-                            if model.id == 'pro':
-                                print(f'{model.name} er oppbrukt. Bytter til Gemini Flash.')
-                                model = Gem_flash
-                            elif model.id == 'flash':
-                                print('Alle modeller er oppbrukt. Ingen flere bilder kan analyseres.')
-                        
-
-
+            for store, flyer_batch in batch_image_dict.items():
+                print(f'Analyserer nå butikken: {store}')
+                for flyer in flyer_batch:
+                    if model.is_exhausted:
+                        if model.id == 'pro':
+                            print(f'{model.name} er oppbrukt. Bytter til Gemini Flash.')
+                            model = Gem_flash
+                        elif model.id == 'flash':
+                            print('Alle modeller er oppbrukt. Ingen flere bilder kan analyseres.')
+                            return None
+                    
+                    analyze_flyer(flyer, model)
+                    if hasattr(flyer, "categorized_deal") and flyer.categorized_deal:
                         time_prev = time.perf_counter()
-                        categorized_deals = analyze_flyer_image(full_imgpath, model)
+
+
+                        processed_deal = flyer.create_dealsobj()
+                        for category_key, deals_list in processed_deal.items():
+                            if category_key in all_deals:
+                                for deal in deals_list:
+                                    all_deals[category_key].append(deal)
+                        print("  Saving current progress to files...")
+                        for category_key, deals_list in all_deals.items():
+                            save_to_json(deals_list, f"{JSON_OUTPUT_FOLDER}/{category_key}.json")
+
+
+
                         time_new = time.perf_counter()
                         analysis_time = time_new - time_prev
-
                         if analysis_time < model.sleeptime:
                             time.sleep(model.sleeptime - analysis_time)
                             print(f'API is analyzing too quickly. Have to sleep for {model.sleeptime - analysis_time :.3f}s')
 
-                        if categorized_deals:
-                            for category_key, deals_list in categorized_deals.items():
-                                if category_key in all_deals:
-                                    for deal in deals_list:
-                                        deal['store'] = store
-                                        deal['acquired_date'] = acquired_date
-                                        deal['page_number'] = page_number
-                                        deal['AI_model_used'] = model.id
-                                        all_deals[category_key].append(deal)
-                            print("  Saving current progress to files...")
-                            for category_key, deals_list in all_deals.items():
-                                save_to_json(deals_list, f"{JSON_OUTPUT_FOLDER}/{category_key}.json")
-
-                print("\nProcessing complete.")
+        print("\nProcessing complete.")
 
 
     process_all_flyers()
