@@ -87,17 +87,17 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
     def analyze_flyer_batch(flyer_batch, model):
         image_parts = []
     
-        # 1. Iterate through the list of paths and encode each image
+        # Går igjennom hver flyer-objekt i listen og legger til bildedata
         for flyer_page in flyer_batch:
             try:
                 with open(flyer_page.img_path, "rb") as image_file:
                     # Standardize mimeType if needed, or detect dynamically
-                    flyer_page.image_data = base64.b64encode(image_file.read()).decode('utf-8')
+                    image_data = base64.b64encode(image_file.read()).decode('utf-8')
                     
                     image_parts.append({
                         "inlineData": {
                             "mimeType": "image/jpeg", # Ensure this matches your files (png/jpeg)
-                            "data": flyer_page.image_data
+                            "data": image_data
                         }
                     })
             except IOError as e:
@@ -197,6 +197,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
                     flyer_batch[i].categorized_deal = flyer_content['deals']
                 
                 print(f'Deals successfully extracted from batch (store {flyer_batch[0].store})')
+                return None
 
 
 
@@ -375,17 +376,17 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
             def create_dealsobj(self):
                 processed_deals = {}
                 if hasattr(self, 'categorized_deal'):
-                    for category_key, category_deals in self.categorized_deal.items():
-                        processed_deals[category_key] = []
-                        for deal in category_deals:
-                            deal['store'] = self.store
-                            deal['acquired_date'] = self.acquired_date
-                            deal['page_number'] = self.page_number
-                            deal['AI_model_used'] = None if not hasattr(self, 'AI_model_used') else self.AI_model_used
-                            processed_deals[category_key].append(deal)
-                    return processed_deals
-                else:
-                    return None
+                    if self.categorized_deal:
+                        for category_key, category_deals in self.categorized_deal.items():
+                            processed_deals[category_key] = []
+                            for deal in category_deals:
+                                deal['store'] = self.store
+                                deal['acquired_date'] = self.acquired_date
+                                deal['page_number'] = self.page_number
+                                deal['AI_model_used'] = None if not hasattr(self, 'AI_model_used') else self.AI_model_used
+                                processed_deals[category_key].append(deal)
+                        return processed_deals
+                return None
 
         if add_tmp_json:
 
@@ -463,8 +464,8 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
 
                         prop = {
                             'store': shop,
-                            'acquired_date': current_date.date(),
-                            'page_number': f.split('_')[-1],
+                            'acquired_date': current_date.date().strftime(r'%d-%m-%Y'),
+                            'page_number': f.split('_')[-1].split('.')[0],
                             'img_path': os.path.join(IMAGE_INPUT_FOLDER, f)
                             }
                         if shop in batch_image_dict:
@@ -489,14 +490,14 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
 
         if batch_processing:
             for store, flyer_batch in batch_image_dict.items():
-                analyze_flyer_batch(flyer_batch[:min(len(flyer_batch)-1, 3)], model)
-
+                analyze_flyer_batch(flyer_batch[:min(len(flyer_batch)-1, 8)], model)
                 for flyer in flyer_batch:
                     processed_deal = flyer.create_dealsobj()
-                    for category_key, deals_list in processed_deal.items():
-                        if category_key in all_deals:
-                            for deal in deals_list:
-                                all_deals[category_key].append(deal)
+                    if processed_deal:
+                        for category_key, deals_list in processed_deal.items():
+                            if category_key in all_deals:
+                                for deal in deals_list:
+                                    all_deals[category_key].append(deal)
                 print("  Saving current progress to files...")
                 for category_key, deals_list in all_deals.items():
                     save_to_json(deals_list, f"{JSON_OUTPUT_FOLDER}/{category_key}.json")

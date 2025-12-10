@@ -9,6 +9,7 @@ def main(params):
 
     Alle_butikker = ['meny', 'rema-1000', 'kiwi', 'extra','bunnpris','coop-prix','joker','spar','coop-mega','coop-marked','obs']
     #TODO 1: om ny_uke = True bør programmet likevel sjekke om kundeavisbilder er lastet ned fra før, og at om de er det så hopper den over nedlastningen
+    #TODO 2: 
     if not params['BUTIKKER']:
         BUTIKKER = Alle_butikker
     else:
@@ -50,8 +51,20 @@ def main(params):
 ny_uke_standard = {
     'test_mode': False,
     'BUTIKKER': None,
-    'download_kundeaviser': False,
+    'download_kundeaviser': True,
     'skip_parsing': False,
+    'batch_processing':True,
+    'add_temp_JSON': False, 
+    'saveFiles': True,
+    'updateWebsite': True
+    
+}
+
+testing_stuff = {
+    'test_mode': False,
+    'BUTIKKER': None,
+    'download_kundeaviser': False,
+    'skip_parsing': True,
     'batch_processing':True,
     'add_temp_JSON': False, 
     'saveFiles': True,
@@ -59,15 +72,4 @@ ny_uke_standard = {
     
 }
 
-#EKSEMPELKJØRINGER:
-
-#OPPDATER DATABASE TIL NY UKE (Lager også ny database-fil):
-main(ny_uke_standard)
-
-
-#LAGE NY DATABASE-FIL / KJØR JSONtoSQlite:
-#main(skip_parsing=True)
-
-#LEGGE TIL EN ENKELT BUTIKK PÅ ALLEREDE EKSISTERENDE JSON-FILER (F. eks dersom en butikk var treg med å legge ut kundeavisen sin)
-#main(BUTIKKER=['joker'], append_til_JSON = True, ny_uke = True)
-
+main(testing_stuff)
