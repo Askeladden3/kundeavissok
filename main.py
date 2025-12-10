@@ -50,7 +50,7 @@ def main(params):
 ny_uke_standard = {
     'test_mode': False,
     'BUTIKKER': None,
-    'download_kundeaviser': True,
+    'download_kundeaviser': False,
     'skip_parsing': False,
     'batch_processing':True,
     'add_temp_JSON': False, 

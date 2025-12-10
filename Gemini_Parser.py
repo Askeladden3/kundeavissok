@@ -84,34 +84,6 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
         else:
             print(f"No data to save for '{filename}'. File not created.")
 
-    class flyer():
-        '''Generell flyer-klasse. Tar inn store, acquired_date, page_number, category_key og img_path.
-        
-        Har metode for å produsere ferdig "deals"-objekt som videresendes til save_json
-        '''
-
-        def __init__(self, prop):
-            self.store = prop['store']
-            self.acquired_date = prop['acquired_date']
-            self.page_number = prop['page_number']
-            self.category_key = prop['category_key']
-            self.img_path = prop['img_path']
-
-        def create_dealsobj(self):
-            processed_deals = {}
-            if hasattr(self, 'categorized_deal') and hasattr(self, 'AI_model_used'):
-                for category_key, category_deals in self.categorized_deal:
-                    processed_deals[category_key] = []
-                    for deal in category_deals:
-                        deal['store'] = self.store
-                        deal['acquired_date'] = self.acquired_date
-                        deal['page_number'] = self.page_number
-                        deal['AI_model_used'] = self.AI_model_used
-                        processed_deals[category_key].append(deal)
-                return processed_deals
-            else:
-                return None
-
     def analyze_flyer_batch(flyer_batch, model):
         image_parts = []
     
@@ -219,9 +191,14 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
                 json_text = extracted_data['candidates'][0]['content']['parts'][0]['text']
                 categorized_deals = json.loads(json_text)
 
-                for i, analyzed_flyer in categorized_deals.items():
-                    flyer_batch[i].categorized_deal = analyzed_flyer
+                for flyer_content in categorized_deals:
+                    i = flyer_content['image_index']
                     flyer_batch[i].AI_model_used = model.id
+                    flyer_batch[i].categorized_deal = flyer_content['deals']
+                
+                print(f'Deals successfully extracted from batch (store {flyer_batch[0].store})')
+
+
 
                 #TODO: Modifiser kode til å gå igjennom alle entries i json-arrayen:
                 '''# Validate the structure
@@ -383,6 +360,33 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
         consolidated results to multiple JSON files based on deal type.
         """
 
+        class flyer():
+            '''Generell flyer-klasse. Tar inn store, acquired_date, page_number, category_key og img_path.
+            
+            Har metode for å produsere ferdig "deals"-objekt som kan videresendes til save_json
+            '''
+
+            def __init__(self, prop):
+                self.store = prop['store']
+                self.acquired_date = prop['acquired_date']
+                self.page_number = prop['page_number']
+                self.img_path = prop['img_path']
+
+            def create_dealsobj(self):
+                processed_deals = {}
+                if hasattr(self, 'categorized_deal'):
+                    for category_key, category_deals in self.categorized_deal.items():
+                        processed_deals[category_key] = []
+                        for deal in category_deals:
+                            deal['store'] = self.store
+                            deal['acquired_date'] = self.acquired_date
+                            deal['page_number'] = self.page_number
+                            deal['AI_model_used'] = None if not hasattr(self, 'AI_model_used') else self.AI_model_used
+                            processed_deals[category_key].append(deal)
+                    return processed_deals
+                else:
+                    return None
+
         if add_tmp_json:
 
             json_url = "https://askhf.folk.ntnu.no/temp_JSON/"
@@ -461,12 +465,12 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
                             'store': shop,
                             'acquired_date': current_date.date(),
                             'page_number': f.split('_')[-1],
-                            'img_path': f
+                            'img_path': os.path.join(IMAGE_INPUT_FOLDER, f)
                             }
                         if shop in batch_image_dict:
                             batch_image_dict[shop].append(flyer(prop))
                         else:
-                            batch_image_dict[shop] = list(flyer(prop))
+                            batch_image_dict[shop] = [(flyer(prop))]
                         image_files.append(f)
                         break
 
@@ -479,13 +483,13 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
         
 
         print(f"{len(image_files)} bilder skal behandles.")
-        model = Gem_pro
+        model = Gem_flash
 
 
 
         if batch_processing:
-            for store, flyer_batch in batch_image_dict:
-                analyze_flyer_batch(flyer_batch)
+            for store, flyer_batch in batch_image_dict.items():
+                analyze_flyer_batch(flyer_batch[:min(len(flyer_batch)-1, 3)], model)
 
                 for flyer in flyer_batch:
                     processed_deal = flyer.create_dealsobj()
