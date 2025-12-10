@@ -7,10 +7,11 @@ from datetime import datetime
 import requests
 import sys
 from bs4 import BeautifulSoup
+import numpy as np
+import math
 
 
-
-def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
+def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, batchsize = 14):
     '''Sender API-calls til Gemini Flash 2.5 for å ekstrahere matvarer fra kundeavisene
     
     Har to "moduser" for å lagre data ved:
@@ -432,33 +433,28 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
             print(f"file path {JSON_OUTPUT_FOLDER} already exists, continuing script... \n")
 
 
-        image_files_dict = {}
         batch_image_dict = dict()
+        full_flyer_list = list()
         image_files = []
         for f in os.listdir(IMAGE_INPUT_FOLDER):
             if f.lower().endswith(('.png', '.jpg', '.jpeg')):
                 for shop in BUTIKKER:
                     if shop in f:
-                        if shop in image_files_dict:
-                            image_files_dict[shop].append(f)
-                        else:
-                            image_files_dict[shop] = [f]
-
                         prop = {
                             'store': shop,
                             'acquired_date': current_date.date().strftime(r'%d-%m-%Y'),
                             'page_number': f.split('_')[-1].split('.')[0],
                             'img_path': os.path.join(IMAGE_INPUT_FOLDER, f)
                             }
+                        
+                        curr_flyer = flyer(prop)
                         if shop in batch_image_dict:
-                            batch_image_dict[shop].append(flyer(prop))
+                            batch_image_dict[shop].append(curr_flyer)
                         else:
-                            batch_image_dict[shop] = [(flyer(prop))]
+                            batch_image_dict[shop] = [curr_flyer]
+                        full_flyer_list.append(flyer)
                         image_files.append(f)
                         break
-
-
-        #image_files = [f for f in os.listdir(IMAGE_INPUT_FOLDER) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
 
         if not image_files:
             print(f"No image files found in '{IMAGE_INPUT_FOLDER}'.")
@@ -469,10 +465,10 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True):
         model = Gem_flash
 
 
-
         if batch_processing:
-            for store, flyer_batch in batch_image_dict.items():
-                analyze_flyer_batch(flyer_batch[:min(len(flyer_batch)-1, 8)], model)
+            batched_flyer_list = np.array_split(full_flyer_list, math.ceil(len(full_flyer_list/batchsize)))
+            for flyer_batch in batched_flyer_list:
+                analyze_flyer_batch(flyer_batch, model)
                 for flyer in flyer_batch:
                     processed_deal = flyer.create_dealsobj()
                     if processed_deal:
