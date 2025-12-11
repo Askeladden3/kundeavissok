@@ -173,7 +173,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
                         flyer_batch[i].categorized_deal = flyer_content['deals']
                     else:
                         print(f'\nUgyldig struktur på følgende bilde: {flyer_batch[i].img_path}. Hoppes over.')
-                print(f'Deals successfully extracted from batch (butikk til første og siste element i batch: {flyer_batch[0].store} | {flyer_batch[-1].store})')
+                print(f'\nDeals successfully extracted from batch ({flyer_batch[0].store} | {flyer_batch[-1].store})\n')
                 return None
 
             except requests.exceptions.RequestException as e:
@@ -407,7 +407,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
                             batch_image_dict[shop].append(curr_flyer)
                         else:
                             batch_image_dict[shop] = [curr_flyer]
-                        full_flyer_list.append(flyer)
+                        full_flyer_list.append(curr_flyer)
                         image_files.append(f)
                         break
 
