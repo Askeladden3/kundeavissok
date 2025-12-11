@@ -18,6 +18,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
 
     max_retries = 3
     max_timeout = 190
+    failed_batches = []
     required_keys = ['price_deals', 'percentage_deals', 'three_for_two_deals', 'multibuy_for_price_deals', 'kroner_off_deals']
 
     if not API_KEY:
@@ -142,7 +143,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
                     else:
                         print(f'Ugyldig struktur på følgende bilde: {flyer_batch[i].img_path}. Hoppes over.')
                         errorFlag = True
-                print(f'\nDeals successfully extracted from batch nr. {1} ({flyer_batch[0].store} | {flyer_batch[-1].store}')
+                print(f'\nDeals successfully extracted from batch nr. {batchidx} ({flyer_batch[0].store} | {flyer_batch[-1].store}')
                 return None
 
             except requests.exceptions.RequestException as e:
@@ -166,6 +167,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
         
         if errorFlag:
             print(f'\n\n Batch nr {batchidx+1} av {n_batches} har ikke blitt behandlet. Går videre til neste batch.\n\n')
+            failed_batches.append(flyer_batch)
             return None
 
         return None
@@ -326,6 +328,8 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
                             time.sleep(model.sleeptime - analysis_time)
                             print(f'API is analyzing too quickly. Have to sleep for {model.sleeptime - analysis_time :.3f}s')
 
+        if failed_batches:
+            print(f'ALLE MISLYKKEDE BATCHES: \n\n {failed_batches}')
         print("\nProcessing complete.")
 
 
