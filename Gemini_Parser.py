@@ -17,6 +17,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
 
 
     max_retries = 3
+    max_timeout = 190
     required_keys = ['price_deals', 'percentage_deals', 'three_for_two_deals', 'multibuy_for_price_deals', 'kroner_off_deals']
 
     if not API_KEY:
@@ -32,6 +33,9 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
     except:
         pass
 
+    with open('prompts.json', 'r', encoding='utf-8') as f:
+        prompts = json.load(f)
+        prompt = prompts['batch'] if batchsize > 1 else prompts['non_batch']
 
 
     class API_model():
@@ -73,19 +77,18 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
         else:
             print(f"No data to save for '{filename}'. File not created.")
 
-    def analyze_flyer_batch(flyer_batch, model):
+    def analyze_flyer_batch(flyer_batch, model, batchidx = None, n_batches=None):
         image_parts = []
     
         # Går igjennom hver flyer-objekt i listen og legger til bildedata
         for flyer_page in flyer_batch:
             try:
                 with open(flyer_page.img_path, "rb") as image_file:
-                    # Standardize mimeType if needed, or detect dynamically
                     image_data = base64.b64encode(image_file.read()).decode('utf-8')
                     
                     image_parts.append({
                         "inlineData": {
-                            "mimeType": "image/jpeg", # Ensure this matches your files (png/jpeg)
+                            "mimeType": "image/jpeg",
                             "data": image_data
                         }
                     })
@@ -97,46 +100,6 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
             print("No valid images to process.")
             return None
 
-
-        prompt = """
-        Analyze the provided images of Norwegian grocery store flyers. Process each image independently in the order they are provided.
-        
-        Your goal is to identify deals, focusing on **price per kilogram (pr. kg) or price per liter (pr. l)**, which is often in smaller text below the product description.
-
-        **OUTPUT FORMAT:**
-        Return a single valid **JSON Array** (list). 
-        Each item in the array must correspond to one image and contain the following fields:
-        - `image_index`: The sequential number of the image (0, 1, 2...).
-        - `deals`: A JSON array containing the five categorized deal types below.
-
-        **DEAL CATEGORIES (inside the `deals` object):**
-        
-        1.  `price_deals`: Standard price reductions.
-            - `name`: Product name.
-            - `price_per_unit`: **The most important value.** (decimal). Look for "pr. kg" or "pr. l".
-            - `total_price`: Total sale price (decimal).
-            - `total_mass`: Total weight/volume (decimal, e.g. 0.5 for 500g), or null.
-            - `unit`: "kg" or "l".
-
-        2.  `percentage_deals`: Percentage off (e.g., "-30%").
-            - `name`: Product name.
-            - `percentage_off`: Discount percentage (number).
-
-        3.  `three_for_two_deals`: ONLY "3 for 2" offers.
-            - `name`: Product name.
-
-        4.  `multibuy_for_price_deals`: "X for Y kr" offers (NOT "3 for 2").
-            - `name`: Product name.
-            - `amount_of_wares`: Number of items (X).
-            - `set_price`: Total price (Y).
-
-        5.  `kroner_off_deals`: Fixed amount subtracted (e.g., "-5 kr").
-            - `name`: Product name.
-            - `amount_subtracted`: Amount subtracted (number).
-
-        Do not include any text or markdown outside the JSON Array.
-        """
-
         payload = {
             "contents": [
                 {
@@ -145,26 +108,31 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
             ],
             "generationConfig": {
                 "responseMimeType": "application/json",
-                # Optional: Increase token count if batch size is large
+                # Hvis bilder blir for høy-def, øk antall tokens med kode under
                 # "maxOutputTokens": 8192 
             }
         }
 
         headers = {'Content-Type': 'application/json'}
 
+        errorFlag = False
         for attempt in range(max_retries):
-
 
             model.n_calls += 1
 
             try:
-                response = requests.post(model.api_url, headers=headers, json=payload, timeout=90)
+                response = requests.post(model.api_url, headers=headers, json=payload, timeout=max_timeout)
                 response.raise_for_status()
                 
                 extracted_data = response.json()
                 
                 json_text = extracted_data['candidates'][0]['content']['parts'][0]['text']
                 categorized_deals = json.loads(json_text)
+                if batchsize <=1:
+                    if all(k in flyer_content['deals'] for k in required_keys):
+                        flyer_batch[0].categorized_deal = flyer_content['deals']
+                        flyer_batch[0].AI_model_used = model.id
+                        return flyer_content['deals']
 
                 for flyer_content in categorized_deals:
                     i = flyer_content['image_index']
@@ -172,8 +140,9 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
                     if all(k in flyer_content['deals'] for k in required_keys):
                         flyer_batch[i].categorized_deal = flyer_content['deals']
                     else:
-                        print(f'\nUgyldig struktur på følgende bilde: {flyer_batch[i].img_path}. Hoppes over.')
-                print(f'\nDeals successfully extracted from batch ({flyer_batch[0].store} | {flyer_batch[-1].store})\n')
+                        print(f'Ugyldig struktur på følgende bilde: {flyer_batch[i].img_path}. Hoppes over.')
+                        errorFlag = True
+                print(f'\nDeals successfully extracted from batch nr. {1} ({flyer_batch[0].store} | {flyer_batch[-1].store}')
                 return None
 
             except requests.exceptions.RequestException as e:
@@ -186,129 +155,20 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
                     time.sleep(5)
                 else:
                     print(f"  Final API request failed. Response: {response.text if 'response' in locals() else 'No response'}")
-                    return None
+                    errorFlag = True
             except (KeyError, IndexError, json.JSONDecodeError, ValueError) as e:
                 print(f"  Error parsing API response (attempt {attempt + 1}/{max_retries}): {e}")
                 print(f"  Received data: {response.text if 'response' in locals() else 'No response'}")
                 if attempt < max_retries - 1:
                     time.sleep(5)
                 else:
-                    return None
-                
-        return None
+                    errorFlag = True
         
-
-    def analyze_flyer(flyer, model):
-        """
-        Analyzes a single flyer image using the Gemini API and returns structured data.
-        """
-        print(f"Processing image: {flyer.img_path}...")
-
-        try:
-            with open(flyer.img_path, "rb") as image_file:
-                image_data = base64.b64encode(image_file.read()).decode('utf-8')
-        except IOError as e:
-            print(f"  Error reading file: {e}")
+        if errorFlag:
+            print(f'\n\n Batch nr {batchidx+1} av {n_batches} har ikke blitt behandlet. Går videre til neste batch.\n\n')
             return None
 
-        prompt = """
-        Analyze the provided image of a Norwegian grocery store flyer. Your primary goal is to identify the best deals by focusing on the **price per kilogram (pr. kg) or price per liter (pr. l)**, which is often in smaller text below the product description.
-
-        Identify and categorize all distinct product offers into five specific types.
-        Return the result as a single, valid JSON object with five keys. Each key should contain an array of objects for that category. If a category has no offers, its array must be empty.
-
-        1.  `price_deals`: Standard price reductions.
-            - `name`: The main name of the product.
-            - `price_per_unit`: **The most important value.** The price per kg or liter, as a decimal number. Find this by looking for text like "pr. kg" or "pr. l".
-            - `total_price`: The total sale price as a decimal number.
-            - `total_mass`: The total weight/volume as a decimal number (e.g., "500 g" becomes 0.5, "1.5 l" becomes 1.5), or null.
-            - `unit`: The unit of measurement, either "kg" or "l". Infer from the product type or the unit price text.
-
-        2.  `percentage_deals`: A percentage off the price (e.g., "-30%").
-            - `name`: The product name.
-            - `percentage_off`: The discount percentage as a number (e.g., 30).
-
-        3.  `three_for_two_deals`: ONLY for "3 for 2" offers. Do not include any other combinations.
-            - `name`: The product name.
-
-        4.  `multibuy_for_price_deals`: For offers like "X for Y kr" that are NOT "3 for 2".
-            - `name`: The product name.
-            - `amount_of_wares`: The number of items you must buy (the 'X' value).
-            - `set_price`: The total price for the multibuy (the 'Y' value).
-
-        5.  `kroner_off_deals`: A fixed amount subtracted from the price (e.g., "-5 kr").
-            - `name`: The product name.
-            - `amount_subtracted`: The amount of kroners subtracted as a number (e.g., 5).
-
-        Do not include any text, markdown, or explanations outside of the final JSON object.
-        """
-
-        
-        payload = {
-            "contents": [
-                {
-                    "parts": [
-                        {"text": prompt},
-                        {
-                            "inlineData": {
-                                "mimeType": "image/jpeg",
-                                "data": image_data
-                            }
-                        }
-                    ]
-                }
-            ],
-            "generationConfig": {
-                "responseMimeType": "application/json",
-            }
-        }
-
-        headers = {'Content-Type': 'application/json'}
-
-        max_retries = 3
-
-        for attempt in range(max_retries):
-
-
-            model.n_calls += 1
-
-            try:
-                response = requests.post(model.api_url, headers=headers, json=payload, timeout=90)
-                response.raise_for_status()
-                
-                extracted_data = response.json()
-                
-                json_text = extracted_data['candidates'][0]['content']['parts'][0]['text']
-                categorized_deals = json.loads(json_text)
-
-                if all(k in categorized_deals for k in required_keys):
-                    print(f"  Successfully extracted deals from the image.")
-                    flyer.categorized_deal = categorized_deals
-                    return categorized_deals
-                else:
-                    raise ValueError("Response JSON is missing one or more required keys.")
-
-            except requests.exceptions.RequestException as e:
-                print(f"  API request failed (attempt {attempt + 1}/{max_retries}): {e}")
-                #Hvis APIen sender kode 429 ("Rate limit reached") så skal modellen byttes
-                if e.response is not None and e.response.status_code == 429:
-                    model.is_exhausted = True
-                    print(f"Error 429 motatt. Slutter nå å bruke {model.name}.")
-                if attempt < max_retries - 1:
-                    time.sleep(5)
-                else:
-                    print(f"  Final API request failed. Response: {response.text if 'response' in locals() else 'No response'}")
-                    return None
-            except (KeyError, IndexError, json.JSONDecodeError, ValueError) as e:
-                print(f"  Error parsing API response (attempt {attempt + 1}/{max_retries}): {e}")
-                print(f"  Received data: {response.text if 'response' in locals() else 'No response'}")
-                if attempt < max_retries - 1:
-                    time.sleep(5)
-                else:
-                    return None
-                
         return None
-
 
     def process_all_flyers():
         """
@@ -327,6 +187,9 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
                 self.acquired_date = prop['acquired_date']
                 self.page_number = prop['page_number']
                 self.img_path = prop['img_path']
+            
+            def __repr__(self):
+                return f"{self.store} | {self.page_number}"
 
             def create_dealsobj(self):
                 processed_deals = {}
@@ -335,9 +198,10 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
                         for category_key, category_deals in self.categorized_deal.items():
                             processed_deals[category_key] = []
                             for deal in category_deals:
+                                deal['name'] = deal['name'].capitalize()
                                 deal['store'] = self.store
                                 deal['acquired_date'] = self.acquired_date
-                                deal['page_number'] = self.page_number
+                                deal['page_number'] = int(self.page_number)
                                 deal['AI_model_used'] = None if not hasattr(self, 'AI_model_used') else self.AI_model_used
                                 processed_deals[category_key].append(deal)
                         return processed_deals
@@ -421,9 +285,10 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
 
 
         if batch_processing:
-            batched_flyer_list = np.array_split(full_flyer_list, math.ceil(len(full_flyer_list)/batchsize))
-            for flyer_batch in batched_flyer_list:
-                analyze_flyer_batch(flyer_batch, model)
+            n_batches = math.ceil(len(full_flyer_list)/batchsize)
+            batched_flyer_list = np.array_split(full_flyer_list, n_batches)
+            for idx, flyer_batch in enumerate(batched_flyer_list):
+                analyze_flyer_batch(flyer_batch, model, batchidx=idx, n_batches = n_batches)
                 for flyer in flyer_batch:
                     processed_deal = flyer.create_dealsobj()
                     if processed_deal:
@@ -440,10 +305,9 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
             for store, flyer_batch in batch_image_dict.items():
                 print(f'Analyserer nå butikken: {store}')
                 for flyer in flyer_batch:
-                    analyze_flyer(flyer, model)
+                    analyze_flyer_batch([flyer], model)
                     if hasattr(flyer, "categorized_deal") and flyer.categorized_deal:
                         time_prev = time.perf_counter()
-
 
                         processed_deal = flyer.create_dealsobj()
                         for category_key, deals_list in processed_deal.items():
