@@ -18,7 +18,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
 
     max_retries = 3
     max_timeout = 190
-    failed_batches = []
+    failed_batches = dict()
     required_keys = ['price_deals', 'percentage_deals', 'three_for_two_deals', 'multibuy_for_price_deals', 'kroner_off_deals']
 
     if not API_KEY:
@@ -42,7 +42,6 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
     class API_model():
 
         def __init__(self, id, name, RPM, rateLimit, api_url):
-            ModelData = ModelData[id]
             self.id = id
             self.name = name
             self.n_calls = 0
@@ -167,7 +166,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
         
         if errorFlag:
             print(f'\n\n Batch nr {batchidx+1} av {n_batches} har ikke blitt behandlet. Går videre til neste batch.\n\n')
-            failed_batches.append(flyer_batch)
+            failed_batches[(batchidx, n_batches)] = flyer_batch
             return None
 
         return None
@@ -191,7 +190,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
                 self.img_path = prop['img_path']
             
             def __repr__(self):
-                return f"{self.store} | {self.page_number}"
+                return f"({self.store}-{self.page_number})"
 
             def create_dealsobj(self):
                 processed_deals = {}
@@ -329,7 +328,9 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
                             print(f'API is analyzing too quickly. Have to sleep for {model.sleeptime - analysis_time :.3f}s')
 
         if failed_batches:
-            print(f'ALLE MISLYKKEDE BATCHES: \n\n {failed_batches}')
+            print(f'ALLE MISLYKKEDE BATCHES: \n\n')
+            for (idx, n_batches), batch in failed_batches.items():
+                print(f'batch {idx+1}/{n_batches}: ', batch)
         print("\nProcessing complete.")
 
 
