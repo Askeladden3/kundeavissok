@@ -25,20 +25,20 @@ def fetch_kundeavis(BUTIKKER, dato, refresh_aviser=False):
 
     downloaded_shops = []
 
-    '''
     try:
-        for entry in os.listdir(f'kundeavis_data/{år}_{uke}'):
+        for entry in os.listdir(f'temp_output/bilder'):
             shopName = entry.split('_')[0]
             if shopName not in downloaded_shops:
                 downloaded_shops.append(shopName)
         
-        BUTIKKER = list(set(BUTIKKER).difference(set(downloaded_shops)))
-        if not BUTIKKER:
+        unique_stores = list(set(BUTIKKER).difference(set(downloaded_shops)))
+        if not unique_stores:
             print('Kundeavisene til valgte butikker er allerede lasted ned')
             return None
+        else:
+            BUTIKKER = unique_stores
     except:
         pass
-    '''
 
 
     if refresh_aviser:

@@ -9,7 +9,7 @@ import numpy as np
 import math
 
 
-def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, batchsize = 14):
+def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, batchsize = None):
     '''Sender API-calls for å ekstrahere matvarer fra kundeavisene'''
 
     current_date, år, UKE = DATO
@@ -18,6 +18,8 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
 
     max_retries = 3
     max_timeout = 190
+
+    RPD_tol = 0.8 #Tall mellom 0 og 1, angir (1- andel) av RPD-1 som går til "redundancy", og angir dermed også batchsize
     failed_batches = dict()
     required_keys = ['price_deals', 'percentage_deals', 'three_for_two_deals', 'multibuy_for_price_deals', 'kroner_off_deals']
 
@@ -79,6 +81,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
 
     def analyze_flyer_batch(flyer_batch, model, batchidx = None, n_batches=None):
         image_parts = []
+        batch_n = batchidx+1
     
         # Går igjennom hver flyer-objekt i listen og legger til bildedata
         for flyer_page in flyer_batch:
@@ -116,7 +119,9 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
         headers = {'Content-Type': 'application/json'}
 
         errorFlag = False
-        for attempt in range(max_retries):
+        attempt = 0
+        err_counter = 0
+        while attempt < (max_retries):
 
             model.n_calls += 1
 
@@ -142,7 +147,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
                     else:
                         print(f'Ugyldig struktur på følgende bilde: {flyer_batch[i].img_path}. Hoppes over.')
                         errorFlag = True
-                print(f'\nDeals successfully extracted from batch nr. {batchidx} ({flyer_batch[0].store} | {flyer_batch[-1].store}')
+                print(f'\nDeals successfully extracted from batch nr. {batch_n} ({flyer_batch[0].store} | {flyer_batch[-1].store})')
                 return None
 
             except requests.exceptions.RequestException as e:
@@ -151,6 +156,11 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
                 if e.response is not None and e.response.status_code == 429:
                     model.is_exhausted = True
                     print(f"Error 429 motatt. Slutter nå å bruke {model.name}.")
+                    return None
+                elif e.response.status_code == 503 and err_counter < 4:
+                    attempt -= 1
+                    err_counter +=1
+
                 if attempt < max_retries - 1:
                     time.sleep(5)
                 else:
@@ -163,11 +173,14 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
                     time.sleep(5)
                 else:
                     errorFlag = True
-        
+            
+            attempt += 1
         if errorFlag:
-            print(f'\n\n Batch nr {batchidx+1} av {n_batches} har ikke blitt behandlet. Går videre til neste batch.\n\n')
+            print(f'\n\n Batch nr {batch_n} av {n_batches} har ikke blitt behandlet. Går videre til neste batch.\n\n')
             failed_batches[(batchidx, n_batches)] = flyer_batch
             return None
+        
+
 
         return None
 
@@ -286,6 +299,8 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
 
 
         if batch_processing:
+            if not batchsize:
+                batchsize = math.ceil(len(full_flyer_list)/(RPD_tol*model.rate_limit))
             n_batches = math.ceil(len(full_flyer_list)/batchsize)
             batched_flyer_list = np.array_split(full_flyer_list, n_batches)
             for idx, flyer_batch in enumerate(batched_flyer_list):
@@ -300,6 +315,11 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
                 print("  Saving current progress to files...")
                 for category_key, deals_list in all_deals.items():
                     save_to_json(deals_list, f"{JSON_OUTPUT_FOLDER}/{category_key}.json")
+                if model.is_exhausted and model.id == 'flash':
+                    print('Gemini flash er oppbrukt. Må stoppe prosessen her.')
+                    remaining_batches = full_flyer_list[idx+1:]
+                    failed_batches.extend(remaining_batches)
+                    break
 
 
         else:
