@@ -29,7 +29,7 @@ def main(params):
 
 
     if not params['skip_parsing']:
-        Gemini_parser(BUTIKKER, dato, params['add_temp_JSON'], params['batch_processing'], params['batchsize'])
+        Gemini_parser(BUTIKKER, dato, params['add_website_JSON'], params['batchsize'], params['prev_failed_batches'])
     nedlastede_butikker = JSONtoSQlite(dato)
 
 
@@ -51,9 +51,9 @@ ny_uke_standard = {
     'BUTIKKER': None,
     'download_kundeaviser': True,
     'skip_parsing': False,
-    'batch_processing':True,
-    'batchsize': 14,
-    'add_temp_JSON': False, 
+    'batchsize': 16, #Hvis satt til None brukes automatisk algoritme, så kan være lettere hvis usikker på hva som er bra
+    'prev_failed_batches': None,  #Liste med failed batches som skal reprosseseres (Ikke idx, men batch_nr (altså hvis 1. batch feilet, så skriv 1 og ikke 0 i listen))
+    'add_website_JSON': False, 
     'saveFiles': True,
     'updateWebsite': True
     
@@ -63,12 +63,12 @@ testing_stuff = {
     'test_mode': False,
     'BUTIKKER': None,
     'download_kundeaviser': False,
-    'skip_parsing': False,
-    'batch_processing':True,
+    'skip_parsing': True,
     'batchsize': 18,
-    'add_temp_JSON': False, 
+    'prev_failed_batches': None,
+    'add_website_JSON': False, 
     'saveFiles': True,
-    'updateWebsite': False
+    'updateWebsite': True
     
 }
 

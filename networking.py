@@ -79,7 +79,7 @@ def zip_and_saveFiles(dato):
 
     current_date, år, uke = dato
     formatting = 'zip'
-    archive_name = f'kundeavisfiler_{år}_{uke}'
+    archive_name = f'temp_output\\kundeavisfiler_{år}_{uke}'
     full_fileName = archive_name + "." + formatting
 
     shutil.make_archive(archive_name, formatting, 'temp_output/results_JSON')

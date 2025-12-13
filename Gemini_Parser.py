@@ -9,7 +9,7 @@ import numpy as np
 import math
 
 
-def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, batchsize = None):
+def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_failed_batches=None):
     '''Sender API-calls for å ekstrahere matvarer fra kundeavisene'''
 
     current_date, år, UKE = DATO
@@ -160,6 +160,8 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
                 elif e.response.status_code == 503 and err_counter < 4:
                     attempt -= 1
                     err_counter +=1
+                    print(f'Error 503. err_counter: {err_counter}')
+                    time.sleep(5)
 
                 if attempt < max_retries - 1:
                     time.sleep(5)
@@ -184,7 +186,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
 
         return None
 
-    def process_all_flyers():
+    def process_all_flyers(batchsize=batchsize):
         """
         Main function to loop through all images, process them, and save the
         consolidated results to multiple JSON files based on deal type.
@@ -298,12 +300,16 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
         model = Gem_flash
 
 
-        if batch_processing:
-            if not batchsize:
-                batchsize = math.ceil(len(full_flyer_list)/(RPD_tol*model.rate_limit))
+        if batchsize is None:
+            batchsize = math.ceil(len(full_flyer_list)/(RPD_tol*model.rate_limit))
+
+
+        if batchsize > 1:
             n_batches = math.ceil(len(full_flyer_list)/batchsize)
             batched_flyer_list = np.array_split(full_flyer_list, n_batches)
             for idx, flyer_batch in enumerate(batched_flyer_list):
+                if prev_failed_batches and idx + 1 not in prev_failed_batches:
+                    continue
                 analyze_flyer_batch(flyer_batch, model, batchidx=idx, n_batches = n_batches)
                 for flyer in flyer_batch:
                     processed_deal = flyer.create_dealsobj()
@@ -348,9 +354,12 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batch_processing=True, bat
                             print(f'API is analyzing too quickly. Have to sleep for {model.sleeptime - analysis_time :.3f}s')
 
         if failed_batches:
+            final_nbatch_list = []
             print(f'ALLE MISLYKKEDE BATCHES: \n\n')
             for (idx, n_batches), batch in failed_batches.items():
                 print(f'batch {idx+1}/{n_batches}: ', batch)
+                final_nbatch_list.append(idx+1)
+            print('Liste med alle failed batchnr (ikke idx): ', final_nbatch_list)
         print("\nProcessing complete.")
 
 
