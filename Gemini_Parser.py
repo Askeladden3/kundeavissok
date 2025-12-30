@@ -43,15 +43,15 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
 
     class API_model():
 
-        def __init__(self, id, name, RPM, rateLimit, api_url):
+        def __init__(self, id, name, RPM, RPD):
             self.id = id
             self.name = name
             self.n_calls = 0
             self.is_exhausted = False
             self.RPM = RPM
             self.sleeptime = 60 // self.RPM
-            self.rate_limit = rateLimit
-            self.api_url = api_url
+            self.rate_limit = RPD
+            self.api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.id}:generateContent?key={API_KEY}"
 
         def rate_limit_reached(self):
             if self.n_calls > self.rate_limit:
@@ -60,11 +60,12 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
             else:
                 return False
 
-    flash_api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
-    pro_api_url =   f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key={API_KEY}'
 
-    Gem_flash = API_model('flash', 'Gemini Flash', 10, 250, flash_api_url)
-    Gem_pro = API_model('pro', 'Gemini Pro', 2, 50, pro_api_url)
+    Gem_flash = API_model('gemini-2.5-flash', 'Gemini Flash', 5, 20)
+    Gem3_flash = API_model('gemini-3-flash', 'Gemini 3 Flash', 5, 20)
+    #Gem_pro = API_model('pro', 'Gemini Pro', 2, 50)
+
+    AI_models = [Gem3_flash, Gem_flash]
 
     
     def save_to_json(data, filename):
@@ -297,7 +298,9 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
         
 
         print(f"{len(image_files)} bilder skal behandles.")
-        model = Gem_flash
+
+
+        model = AI_models[0]
 
 
         if batchsize is None:
@@ -321,11 +324,16 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
                 print("  Saving current progress to files...")
                 for category_key, deals_list in all_deals.items():
                     save_to_json(deals_list, f"{JSON_OUTPUT_FOLDER}/{category_key}.json")
-                if model.is_exhausted and model.id == 'flash':
-                    print('Gemini flash er oppbrukt. Må stoppe prosessen her.')
-                    remaining_batches = full_flyer_list[idx+1:]
-                    failed_batches.extend(remaining_batches)
-                    break
+                if model.is_exhausted:
+                    model_idx = AI_models.index(model)
+                    if model_idx == len(AI_models):
+                        print('Alle AI-modeller brukt opp. Må stoppe prosessen her.')
+                        remaining_batches = full_flyer_list[idx+1:]
+                        failed_batches.extend(remaining_batches)
+                        break
+                    else:
+                        model = AI_models[model_idx+1]
+
 
 
         else:
@@ -352,6 +360,15 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
                         if analysis_time < model.sleeptime:
                             time.sleep(model.sleeptime - analysis_time)
                             print(f'API is analyzing too quickly. Have to sleep for {model.sleeptime - analysis_time :.3f}s')
+                        if model.is_exhausted:
+                            model_idx = AI_models.index(model)
+                            if model_idx == len(AI_models):
+                                print('Alle AI-modeller brukt opp. Må stoppe prosessen her.')
+                                remaining_batches = full_flyer_list[idx+1:]
+                        failed_batches.extend(remaining_batches)
+                        break
+                    else:
+                        model = AI_models[model_idx+1]
 
         if failed_batches:
             final_nbatch_list = []
