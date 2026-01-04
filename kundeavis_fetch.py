@@ -66,7 +66,7 @@ def fetch_kundeavis(BUTIKKER, dato, refresh_aviser=False):
 
     for butikk in BUTIKKER:
 
-        avis_src = "https://s.kupp.no/prod/pages/" + butikk + "/" + str(år) + "/" + str(uke) + "/"
+        avis_src = f"https://s.kupp.no/prod/pages/{butikk}/{år}/{uke:02d}/"
 
         word = avis_src
         occurrences = []
@@ -76,11 +76,13 @@ def fetch_kundeavis(BUTIKKER, dato, refresh_aviser=False):
             occurrences.append((match.start(), match.end()))
         src_occurrences = []
 
+
         extr_str_len = len('b372bf52-db70-44a0-8e4b-215d2fb74d9f.t')
 
         #TODO: BRUK HELLER if '.jpg' in str
         for occ_idx_strt, occ_idx_end in occurrences:
-            if '.t' in html[occ_idx_strt:occ_idx_end+extr_str_len]:
+            occr_str = html[occ_idx_strt:occ_idx_end+extr_str_len]
+            if '.t' in occr_str:
                 continue
             for src_str in range(occ_idx_end, occ_idx_end+80):
                 if html[src_str] == '.':

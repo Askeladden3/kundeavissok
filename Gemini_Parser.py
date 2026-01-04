@@ -62,7 +62,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
 
 
     Gem_flash = API_model('gemini-2.5-flash', 'Gemini Flash', 5, 20)
-    Gem3_flash = API_model('gemini-3-flash', 'Gemini 3 Flash', 5, 20)
+    Gem3_flash = API_model('gemini-3-flash-preview', 'Gemini 3 Flash', 5, 20)
     #Gem_pro = API_model('pro', 'Gemini Pro', 2, 50)
 
     AI_models = [Gem3_flash, Gem_flash]
