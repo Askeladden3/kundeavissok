@@ -74,7 +74,7 @@ missing_stores = {
 
 testing_stuff = {
     'test_mode': True,
-    'BUTIKKER': None,
+    'BUTIKKER': ['meny'],
     'download_kundeaviser': True,
     'skip_parsing': False,
     'batchsize': 30,

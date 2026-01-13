@@ -24,9 +24,9 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
     required_keys = ['price_deals', 'percentage_deals', 'three_for_two_deals', 'multibuy_for_price_deals', 'kroner_off_deals']
 
     if not API_KEY:
-        sys.exit("❌ ERROR: API_KEY not found in environment variables!")
+        sys.exit("ERROR: API_KEY not found in environment variables!")
     else:
-        print("✅ API_KEY is present (value hidden).")
+        print("API_KEY is present (value hidden).")
 
     IMAGE_INPUT_FOLDER = f"temp_output/bilder" 
     JSON_OUTPUT_FOLDER = "temp_output/results_JSON"
