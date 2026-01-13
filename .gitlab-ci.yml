@@ -1,22 +1,39 @@
 stages:
   - run
-  - store
 
-default:
-  image: python:3.11
-  before_script:
-    - pip install --upgrade pip
-    - pip install -r requirements.txt
-
-
-weekly_job:
-  stage: run
-  script:
-    - echo "Running weekly job..."
-    - python main.py
+# Define the logic that is shared between both methods
+.job_template: &job_definition
   artifacts:
     paths:
       - temp_output/
     expire_in: 1 week
   only:
     - schedules
+
+# -----------------------------
+# OPTION A: Docker Job
+# -----------------------------
+weekly_job_docker:
+  <<: *job_definition
+  tags:
+    - docker-linux  # Requires you to tag your Docker runner with this
+  image: python:3.11
+  script:
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - echo "Running in Docker..."
+    - python main.py
+
+# -----------------------------
+# OPTION B: Shell Job
+# -----------------------------
+weekly_job_shell:
+  <<: *job_definition
+  tags:
+    - windows-shell # Requires you to tag your Shell runner with this
+  script:
+    - if (!(Test-Path venv)) { python -m venv venv }
+    - .\venv\Scripts\Activate.ps1
+    - pip install -r requirements.txt
+    - echo "Running in Shell..."
+    - python main.py
