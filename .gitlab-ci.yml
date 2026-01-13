@@ -1,39 +1,28 @@
 stages:
-  -run
+  - run
 
-# Define the logic that is shared between both methods
-.job_template: &job_definition
+weekly_job:
+  stage: run
+  # Optional: Use tags to ensure this only runs on your specific shell runner
+  # tags:
+  #   - windows-shell 
+  script:
+    # 1. Create venv if it doesn't exist (PowerShell syntax)
+    - if (!(Test-Path venv)) { python -m venv venv }
+    
+    # 2. Activate the virtual environment
+    - .\venv\Scripts\Activate.ps1
+    
+    # 3. Install dependencies inside the venv
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    
+    # 4. Run the actual script
+    - echo "Running weekly job on Windows Shell..."
+    - python main.py
   artifacts:
     paths:
-      -temp_output/
+      - temp_output/
     expire_in: 1 week
   only:
-    -schedules
-
-# -----------------------------
-# OPTION A: Docker Job
-# -----------------------------
-weekly_job_docker:
-  <<: *job_definition
-  tags:
-    -docker-linux  # Requires you to tag your Docker runner with this
-  image: python:3.11
-  script:
-    -pip install --upgrade pip
-    -pip install -r requirements.txt
-    -echo "Running in Docker..."
-    -python main.py
-
-# -----------------------------
-# OPTION B: Shell Job
-# -----------------------------
-weekly_job_shell:
-  <<: *job_definition
-  tags:
-    -windows-shell # Requires you to tag your Shell runner with this
-  script:
-    -if (!(Test-Path venv)) { python -m venv venv }
-    -.\venv\Scripts\Activate.ps1
-    -pip install -r requirements.txt
-    -echo "Running in Shell..."
-    -python main.py
+    - schedules
