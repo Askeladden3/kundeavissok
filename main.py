@@ -51,9 +51,22 @@ ny_uke_standard = {
     'BUTIKKER': None,
     'download_kundeaviser': True,
     'skip_parsing': False,
-    'batchsize': 30, #Hvis satt til None brukes automatisk algoritme, så kan være lettere hvis usikker på hva som er bra
+    'batchsize': 17, #Hvis satt til None brukes automatisk algoritme, så kan være lettere hvis usikker på hva som er bra
     'prev_failed_batches': None,  #Liste med failed batches som skal reprosseseres (Ikke idx, men batch_nr (altså hvis 1. batch feilet, så skriv 1 og ikke 0 i listen))
     'add_website_JSON': False, 
+    'saveFiles': True,
+    'updateWebsite': True
+    
+}
+
+missing_stores = {
+    'test_mode': False,
+    'BUTIKKER': None,
+    'download_kundeaviser': False,
+    'skip_parsing': False,
+    'batchsize': 12, #Hvis satt til None brukes automatisk algoritme, så kan være lettere hvis usikker på hva som er bra
+    'prev_failed_batches': None,  #Liste med failed batches som skal reprosseseres (Ikke idx, men batch_nr (altså hvis 1. batch feilet, så skriv 1 og ikke 0 i listen))
+    'add_website_JSON': True, 
     'saveFiles': True,
     'updateWebsite': True
     
@@ -64,7 +77,7 @@ testing_stuff = {
     'BUTIKKER': None,
     'download_kundeaviser': True,
     'skip_parsing': False,
-    'batchsize': 33,
+    'batchsize': 30,
     'prev_failed_batches': None,
     'add_website_JSON': False, 
     'saveFiles': False,
@@ -72,4 +85,4 @@ testing_stuff = {
     
 }
 
-main(ny_uke_standard)
+main(testing_stuff)
