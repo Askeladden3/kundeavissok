@@ -1,0 +1,4 @@
+ia-hidden="true"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path></svg><p class="truncate text-xs" aria-hidden="true">Fra i morgen</p></div><div class="flex flex-row items-center gap-1"></div></div><div class="shrink-0"></div></div></a></li><li class="w-full max-w-[calc(50%-4px)] rounded-lg xl:max-w-[calc(33.33%-6px)]"><a href="/Bunnpris?publication=inventory" class="group"><div class="bg-base-02 flex flex-row items-center gap-2 rounded-lg p-2 shadow-foreground-01/20 dark:shadow-base-01/50 h-[4.6rem] shadow-lg md:h-20 border
+
+
+

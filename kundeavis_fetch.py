@@ -155,6 +155,67 @@ def fetch_helgetilbud(dato):
 
     return kundeavisen
 
+def fetch_kundeavis_etilbudsavis(dato):
+
+    HELGETILBUDAVISER = {'bunnpris-no':'bunnpris', 'coop-prix-no':'coop-prix'}
+
+    #['rema-1000', 'kiwi', 'extra','bunnpris','meny','coop-prix','joker','spar','coop-mega','coop-marked','obs']
+    curr_date, år, uke = dato
+    kundeavisen = {}
+    kundeavisen['header'] = [år, uke, list(HELGETILBUDAVISER.values())]
+
+    chromedriver_path = 'chromedriver.exe' 
+    service = Service(chromedriver_path)
+    options = Options()
+    options.add_argument("--headless")
+
+
+    for idx, helgetilbud in enumerate(HELGETILBUDAVISER.keys()):
+        try:
+            driver = webdriver.Chrome(service=service, options=options)
+            url = f"https://mattilbud.no/kundeaviser/{helgetilbud}" 
+            driver.get(url)
+
+            time.sleep(0.3) 
+
+            html_source = driver.page_source
+            href_links = list()
+            matches = re.finditer('href="/kundeaviser', html_source)
+            for match in matches:
+                href_links.append(html_source[match.start():match.end() + 50].split('"')[1])
+
+            finalurl = "https://mattilbud.no" + href_links[1]
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+        finally:
+            driver.quit()
+
+
+        try:
+            driver = webdriver.Chrome(service=service, options=options)
+            driver.get(finalurl)
+            time.sleep(0.3) 
+
+            page = driver.page_source
+            soup = BeautifulSoup(page, features="html.parser")
+
+            matches = soup.find_all('img', alt=True)
+
+            image_urls = list()
+
+            for url in matches:
+                image_urls.append(url['src'])
+        except Exception as e:
+            print(f'En feil har skjedd: {e}')
+        
+        finally:
+            driver.quit()
+
+        kundeavisen[list(HELGETILBUDAVISER.values())[idx]] = image_urls
+
+    return kundeavisen
+
 def download_kundeaviser(dato, kundeaviser_urls):
 
     current_date, år, uke = dato
