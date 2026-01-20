@@ -85,4 +85,4 @@ testing_stuff = {
     
 }
 
-main(testing_stuff)
+main(ny_uke_standard)

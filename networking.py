@@ -82,7 +82,7 @@ def zip_and_saveFiles(dato):
     archive_name = f'temp_output\\kundeavisfiler_{år}_{uke}'
     full_fileName = archive_name + "." + formatting
 
-    shutil.make_archive(archive_name, formatting, 'temp_output/results_JSON')
+    shutil.make_archive(archive_name, formatting, 'temp_output\\results_JSON')
     hostname = "login.stud.ntnu.no"
     port = 22
     username = "askhf"
