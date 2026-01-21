@@ -20,9 +20,5 @@ weekly_job:
     # 4. Run the actual script
     - echo "Running weekly job on Windows Shell..."
     - python main.py
-  artifacts:
-    paths:
-      - temp_output/
-    expire_in: 1 week
   only:
     - schedules
