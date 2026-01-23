@@ -2,7 +2,9 @@
 <html lang="no">
 <head>
   <meta charset="UTF-8">
-  <title>Food Price Search</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/manifest.json" />
+  <title>Handlelurt</title>
   <style>
     /* General Styling */
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -144,6 +146,15 @@
       .results-container { grid-template-columns: 1fr; gap: 1rem; }
       .food-card { padding: 1.2rem; }
     }
+      /* Fix for iOS automatic zoom on focus */
+    @media screen and (max-width: 768px) {
+      #search, 
+      #dealType, 
+      .store-filter-btn {
+        font-size: 16px !important;
+  }
+    }
+  
   </style>
   <script>
     async function searchFood() {
@@ -259,7 +270,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>Kundeavis-søk (Uke {{index_uke}})</h1>
+    <h1>Handlelurt (Uke {{index_uke}})</h1>
     <h2>Oppdateres hver mandag kl 12</h2>
     <h3>Utilgjengelige butikker: {{ utilgjengelige_butikker }}</h3>
     <div class="search-container">

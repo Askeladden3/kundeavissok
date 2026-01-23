@@ -6,7 +6,7 @@ from datetime import datetime
 import sqlite3
 
 
-
+#TODO: Refactor hele greia til å fungere med pandas. Mye enklere.
 def JSONtoSQlite(dato):
 
     curr_date, år, UKE = dato
