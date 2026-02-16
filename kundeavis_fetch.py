@@ -7,10 +7,18 @@ import requests
 import json
 import os
 from bs4 import BeautifulSoup
+from bs4.element import NavigableString
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
+import re
+import time
+import datetime
+import json
+import html as htmllib
+from urllib.request import urlopen
 
 
 def fetch_kundeavis(BUTIKKER, dato, refresh_aviser=False):
@@ -155,7 +163,7 @@ def fetch_helgetilbud(dato):
 
     return kundeavisen
 
-def fetch_kundeavis_etilbudsavis(dato):
+def fetch_kundeavis_mattilbud(dato):
 
     HELGETILBUDAVISER = {'bunnpris-no':'bunnpris', 'coop-prix-no':'coop-prix'}
 
@@ -216,6 +224,80 @@ def fetch_kundeavis_etilbudsavis(dato):
 
     return kundeavisen
 
+
+def fetch_etilbudsavis(dato):
+
+    HELGETILBUDAVISER = {'Bunnpris':'bunnpris', 'REMA-1000':'rema-1000', 'Coop-Mega':'coop-mega', 'Coop-Prix':'coop-prix', 'Extra':'extra', 'KIWI':'kiwi', 'MENY':'meny', 'Obs':'obs', 'Joker':'joker', 'SPAR':'spar'}
+
+    #['rema-1000', 'kiwi', 'extra','bunnpris','meny','coop-prix','joker','spar','coop-mega','coop-marked','obs']
+    curr_date, år, uke = dato
+    kundeavisen = {}
+    kundeavisen['header'] = [år, uke, list(HELGETILBUDAVISER.values())]
+    failed_stores = []
+
+    service = Service(ChromeDriverManager().install())
+    options = Options()
+    options.add_argument("--headless")
+
+
+    for idx, helgetilbud in enumerate(HELGETILBUDAVISER.keys()):
+        try:
+            driver = webdriver.Chrome(service=service, options=options)
+            url = f"https://www.etilbudsavis.no/{helgetilbud}" 
+            driver.get(url)
+            time.sleep(1) 
+        
+
+            html_source = driver.page_source
+            soup = BeautifulSoup(html_source, 'html.parser')
+            child_element = soup.find(string=re.compile(r"uke\s*\d+", re.IGNORECASE))
+            if child_element is None:
+                print('Første regex funket ikke. Prøver regex="kundeavis".')
+                child_element = soup.find("script", string=re.compile(r"kundeavis", re.IGNORECASE))
+        
+            elif child_element is None:
+                print('Andre regex funket ikke. Prøver regex="Coop Mega".')
+                child_element = soup.find("script", string=re.compile(r"Coop Mega", re.IGNORECASE))
+
+            #Pga programmeringsstrukturen til etilbudsavis blir bilder lagret som del av json-pakke, så denne koden gjør om til json og henter ut url-delen
+            child_element_json = json.loads(child_element.string)
+            for entry in child_element_json.get('@graph', []):
+                if entry.get('@type') == 'ItemList':
+                    butikk_avis_url = entry['itemListElement'][0]['item']['url']
+            final_url = butikk_avis_url
+
+
+
+            driver.get(final_url)
+            time.sleep(1)
+            html = driver.page_source
+            soup = BeautifulSoup(html, 'html.parser')
+            page_divs = soup.find_all('div', attrs={"data-page-number": True})
+            final_img_links = []
+
+
+            #Finner bildene i divsa. bruker spesifikt data-src-lg (large) fordi best kvalitet på bilder.
+            for div in page_divs:
+                img_tag = div.find('img')
+                if img_tag and img_tag.get("data-src-lg"):
+                    final_img_links.append(img_tag.get("data-src-lg"))
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            failed_stores.append(helgetilbud)
+        
+        else:
+            kundeavisen[HELGETILBUDAVISER[helgetilbud]] = final_img_links
+            print(f"Successfully extracted kundeavis from {HELGETILBUDAVISER[helgetilbud]}")
+
+        finally:
+            driver.quit()
+
+    if failed_stores:
+        print(f'Failed stores: {failed_stores}')
+    else:
+        print("All stores extracted successfully!")
+    return kundeavisen
+
 def download_kundeaviser(dato, kundeaviser_urls):
 
     current_date, år, uke = dato
@@ -248,3 +330,13 @@ def download_kundeaviser(dato, kundeaviser_urls):
         for idx, url in enumerate(image_urls):
             save_location = f"temp_output/bilder/{butikk}_{år}_{uke}_{idx+1}.jpg" 
             download_from_url(url, save_location)
+
+
+
+if __name__ == '__main__':
+    current_date = datetime.datetime.now()
+    år = current_date.year
+    uke = current_date.date().isocalendar()[1]
+    dato = [current_date, år, uke]
+
+    URLs = fetch_etilbudsavis(dato)

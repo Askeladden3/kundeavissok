@@ -3,6 +3,7 @@ import shutil
 import os
 from jinja2 import Environment, FileSystemLoader
 
+
 def create_frontend_files(UKE: int, Alle_butikker, nedlastede_butikker):
 
     finenavn_dict = {'rema-1000':'Rema 1000', 'kiwi': 'Kiwi', 'extra': 'Coop Extra',
@@ -75,6 +76,7 @@ def updateWebsite(UKE):
     sftp.close()
     ssh.close()
 
+
 def zip_and_saveFiles(dato):
 
     current_date, år, uke = dato
@@ -118,4 +120,3 @@ def updateWebsite_testing(UKE):
         sftp.put(local_files[index], remote_paths[index])
     sftp.close()
     ssh.close()
-
