@@ -4,3 +4,4 @@ jinja2
 beautifulsoup4
 selenium
 numpy
+webdriver-manager
