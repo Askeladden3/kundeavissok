@@ -78,27 +78,30 @@ def updateWebsite(UKE):
 
 
 def zip_and_saveFiles(dato):
+    try:
+        os.makedirs(os.path.join('temp_output', 'results_json'))
+    except:
+        pass
 
     current_date, år, uke = dato
     formatting = 'zip'
-    archive_name = f'temp_output\\kundeavisfiler_{år}_{uke}'
-    full_fileName = archive_name + "." + formatting
+    file_name = f'kundeavisfiler_{år}_{uke}'
+    local_archive_path = os.path.join('temp_output', file_name)
 
-    shutil.make_archive(archive_name, formatting, 'temp_output\\results_JSON')
+    shutil.make_archive(local_archive_path, formatting,  os.path.join('temp_output', 'results_json'))
     hostname = "login.stud.ntnu.no"
     port = 22
     username = "askhf"
     password = os.environ['PASSWORD']
 
-    local_file = full_fileName
-    remote_path = f"/web/folk/{username}/arkiv/{full_fileName}"
+    remote_path = f"/web/folk/{username}/arkiv/{file_name}.zip"
     
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(hostname, port, username, password)
 
     sftp = ssh.open_sftp()
-    sftp.put(local_file, remote_path)
+    sftp.put(local_archive_path + '.' + formatting, remote_path)
     sftp.close()
     ssh.close()
 
