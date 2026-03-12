@@ -1,0 +1,32 @@
+standard:
+  test_mode: false
+  BUTIKKER:
+  download_kundeaviser: true
+  skip_parsing: false
+  batchsize: 17 #Hvis satt til None brukes automatisk algoritme, så kan være lettere hvis usikker på hva som er bra
+  prev_failed_batches:  #Liste med failed batches som skal reprosseseres (Ikke idx, men batch_nr (altså hvis 1. batch feilet, så skriv 1 og ikke 0 i listen))
+  add_website_JSON: false
+  saveFiles: true
+  updateWebsite: true
+
+missing_stores:
+  test_mode: false
+  BUTIKKER:
+  download_kundeaviser: false
+  skip_parsing: false
+  batchsize:  #Hvis satt til None brukes automatisk algoritme, så kan være lettere hvis usikker på hva som er bra
+  prev_failed_batches:  #Liste med failed batches som skal reprosseseres (Ikke idx, men batch_nr (altså hvis 1. batch feilet, så skriv 1 og ikke 0 i listen))
+  add_website_JSON: true
+  saveFiles: true
+  updateWebsite: true
+
+testing_stuff:
+  test_mode: true
+  BUTIKKER: ['meny']
+  download_kundeaviser: true
+  skip_parsing: false
+  batchsize:  #Hvis satt til None brukes automatisk algoritme, så kan være lettere hvis usikker på hva som er bra
+  prev_failed_batches:  #Liste med failed batches som skal reprosseseres (Ikke idx, men batch_nr (altså hvis 1. batch feilet, så skriv 1 og ikke 0 i listen))
+  add_website_JSON: false
+  saveFiles: false
+  updateWebsite: false

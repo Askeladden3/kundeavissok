@@ -5,3 +5,5 @@ beautifulsoup4
 selenium
 numpy
 webdriver-manager
+google-genai
+PyYAML
