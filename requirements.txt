@@ -7,3 +7,4 @@ numpy
 webdriver-manager
 google-genai
 PyYAML
+pandas
