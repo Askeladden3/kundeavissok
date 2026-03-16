@@ -30,14 +30,14 @@ def main(params):
     if not params['skip_parsing']:
         Gemini_parser(BUTIKKER, dato, params['add_website_JSON'], params['batchsize'], params['prev_failed_batches'])
     nedlastede_butikker = JSONtoSQlite(dato)
-    create_frontend_files(uke, Alle_butikker, nedlastede_butikker)
+    #create_frontend_files(uke, Alle_butikker, nedlastede_butikker)
 
-    if params['test_mode']:
-        updateWebsite_testing(uke)
-    elif params['updateWebsite']:
-        updateWebsite(uke)
-    if params['saveFiles']:
-        zip_and_saveFiles(dato)
+    #if params['test_mode']:
+    #    updateWebsite_testing(uke)
+    #elif params['updateWebsite']:
+    #    updateWebsite(uke)
+    #if params['saveFiles']:
+    #    zip_and_saveFiles(dato)
 
 
 
@@ -45,5 +45,5 @@ def main(params):
 with open('config.yaml', 'r') as fil:
     cfg = yaml.safe_load(fil)
 
-main(cfg['standard'])
+main(cfg['testing_stuff'])
 

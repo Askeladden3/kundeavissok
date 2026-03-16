@@ -7,21 +7,47 @@ import sys
 from bs4 import BeautifulSoup
 import numpy as np
 import math
+import pandas as pd
+from google import genai
+from google.api_core import exceptions
+from pydantic import BaseModel, Field
+from typing import List, Optional, Union, Literal
+from PIL import Image
 
 
 def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_failed_batches=None):
     '''Sender API-calls for å ekstrahere matvarer fra kundeavisene'''
+
+    class base_deal(BaseModel):
+        image_index : int = Field(description="Index of image item is from. Always provided in prompt.")
+        name: str = Field(description="Product name.")
+        total_mass: Optional[float] = Field(default=None, description='Total weight/volume')
+        unit: Optional[str] = Field(default=None, description='"kg", "g" or "l"')
+        store: str = Field(description="Store that sells the items in image. Always provided in prompt.")
+
+
+    class standard_deal(base_deal):
+        deal_type : Literal["standard_deal"] = Field(description = "Fixed label, do not look for this in text.")
+        price_per_unit: float = Field(description='price per kg or liter.')
+        total_price: float = Field(description='Total sale price (decimal)')
+
+    class percentage_deal(base_deal):
+        deal_type : Literal["percentage_deal"] = Field(description = "Fixed label, do not look for this in text.")
+        percentage_off : int = Field(description="Discount percentage")
+
+    class FlyerBatch(BaseModel):
+        flyers: List[Union[standard_deal, percentage_deal]]
+
+    all_deals = {'standard_deal': [], 'percentage_deal': []}
 
     current_date, år, UKE = DATO
     API_KEY = os.getenv("GEMINI_API_KEY")
 
 
     max_retries = 3
-    max_timeout = 190
 
     RPD_tol = 0.8 #Tall mellom 0 og 1, angir (1- andel) av RPD-1 som går til "redundancy", og angir dermed også batchsize
     failed_batches = dict()
-    required_keys = ['price_deals', 'percentage_deals', 'three_for_two_deals', 'multibuy_for_price_deals', 'kroner_off_deals']
 
     if not API_KEY:
         sys.exit("ERROR: API_KEY not found in environment variables!")
@@ -36,9 +62,10 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
     except:
         pass
 
-    with open('prompts.json', 'r', encoding='utf-8') as f:
-        prompts = json.load(f)
-        prompt = prompts['batch'] if batchsize > 1 else prompts['non_batch']
+    with open('prompts.txt', 'r', encoding='utf-8') as f:
+        prompts = f.read()
+        prompts = prompts.split('/'*5)
+        prompt = prompts[1]
 
 
     class API_model():
@@ -51,7 +78,6 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
             self.RPM = RPM
             self.sleeptime = 60 // self.RPM
             self.rate_limit = RPD
-            self.api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.id}:generateContent?key={API_KEY}"
 
         def rate_limit_reached(self):
             if self.n_calls > self.rate_limit:
@@ -63,129 +89,87 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
 
     Gem_flash = API_model('gemini-2.5-flash', 'Gemini Flash', 5, 20)
     Gem3_flash = API_model('gemini-3-flash-preview', 'Gemini 3 Flash', 5, 20)
+    Gem31_flash_lite = API_model('gemini-3.1-flash-lite-preview', 'Gemini 3.1 Flash Lite', 15, 500)
     #Gem_pro = API_model('pro', 'Gemini Pro', 2, 50)
 
-    AI_models = [Gem3_flash, Gem_flash]
+    AI_models = [Gem3_flash, Gem31_flash_lite, Gem_flash]
 
     
-    def save_to_json(data, filename):
+    def save_to_json(data : pd.DataFrame, filename):
         """Saves a list of data to a JSON file if the list is not empty."""
-        if data:
+        if data is not None:
             try:
-                with open(filename, 'w', encoding='utf-8') as f:
-                    json.dump(data, f, indent=4, ensure_ascii=False)
+                data.to_json(filename, force_ascii=False, orient='records', indent=4)
                 print(f"Successfully saved {len(data)} items to '{filename}'.")
             except IOError as e:
                 print(f"Error writing to output file '{filename}': {e}")
         else:
             print(f"No data to save for '{filename}'. File not created.")
 
-    def analyze_flyer_batch(flyer_batch, model, batchidx = None, n_batches=None):
-        image_parts = []
-        batch_n = batchidx+1
-    
-        # Går igjennom hver flyer-objekt i listen og legger til bildedata
-        for flyer_page in flyer_batch:
-            try:
-                with open(flyer_page.img_path, "rb") as image_file:
-                    image_data = base64.b64encode(image_file.read()).decode('utf-8')
-                    
-                    image_parts.append({
-                        "inlineData": {
-                            "mimeType": "image/jpeg",
-                            "data": image_data
-                        }
-                    })
-            except IOError as e:
-                print(f"Skipping file due to error: {flyer_page.img_path} - {e}")
-                continue
+    def analyze_flyer_batch(flyer_batch, model : API_model, batchidx = None, n_batches=None):
 
-        if not image_parts:
-            print("No valid images to process.")
-            return None
+        with genai.Client(api_key = API_KEY) as client:
+            batch_image_list = list()
+            batch_n = batchidx+1
+        
+            # Går igjennom hver flyer-objekt i listen og legger til bildedata
+            for flyer_page in flyer_batch:
+                try:
+                    #"Image index" refererer egentlig til sidetall i kundeavisen, men denne formuleringen er bedre for LLM-forståelse
+                    batch_image_list.append(f"Image index {flyer_page.page_number}, Store {flyer_page.store}:")
+                    batch_image_list.append(Image.open(flyer_page.img_path))
+                except IOError as e:
+                    print(f"Skipping file due to error: {flyer_page.img_path} - {e}")
+                    continue
 
-        payload = {
-            "contents": [
-                {
-                    "parts": [{"text": prompt}] + image_parts 
-                }
-            ],
-            "generationConfig": {
-                "responseMimeType": "application/json",
-                # Hvis bilder blir for høy-def, øk antall tokens med kode under
-                # "maxOutputTokens": 8192 
-            }
-        }
-
-        headers = {'Content-Type': 'application/json'}
-
-        errorFlag = False
-        attempt = 0
-        err_counter = 0
-        while attempt < (max_retries):
-
-            model.n_calls += 1
-
-            try:
-                response = requests.post(model.api_url, headers=headers, json=payload, timeout=max_timeout)
-                response.raise_for_status()
-                
-                extracted_data = response.json()
-                
-                json_text = extracted_data['candidates'][0]['content']['parts'][0]['text']
-                categorized_deals = json.loads(json_text)
-                if batchsize <=1:
-                    if all(k in flyer_content['deals'] for k in required_keys):
-                        flyer_batch[0].categorized_deal = flyer_content['deals']
-                        flyer_batch[0].AI_model_used = model.id
-                        return flyer_content['deals']
-
-                for flyer_content in categorized_deals:
-                    i = flyer_content['image_index']
-                    flyer_batch[i].AI_model_used = model.id
-                    if all(k in flyer_content['deals'] for k in required_keys):
-                        flyer_batch[i].categorized_deal = flyer_content['deals']
-                    else:
-                        print(f'Ugyldig struktur på følgende bilde: {flyer_batch[i].img_path}. Hoppes over.')
-                        errorFlag = True
-                print(f'\nDeals successfully extracted from batch nr. {batch_n} ({flyer_batch[0].store} | {flyer_batch[-1].store})')
+            if not batch_image_list:
+                print("No valid images to process.")
                 return None
 
-            except requests.exceptions.RequestException as e:
-                print(f"  API request failed (attempt {attempt + 1}/{max_retries}): {e}")
-                #Hvis APIen sender kode 429 ("Rate limit reached") så skal modellen byttes
-                if e.response is not None and e.response.status_code == 429:
-                    model.is_exhausted = True
-                    print(f"Error 429 motatt. Slutter nå å bruke {model.name}.")
-                    return None
-                elif e.response.status_code == 503 and err_counter < 4:
-                    attempt -= 1
-                    err_counter +=1
-                    print(f'Error 503. err_counter: {err_counter}')
-                    time.sleep(5)
+
+            errorFlag = False
+            attempt = 0
+            while attempt < (max_retries):
+
+                model.n_calls += 1
+
+                try:
+                    response = client.models.generate_content(
+                    model=model.id,
+                    contents=[prompt,batch_image_list],
+                    config={'response_mime_type':"application/json",
+                            "response_schema": FlyerBatch.model_json_schema()}
+                    )
+                    
+                    #LLM formaterer alle deals inn i en key "flyers", så må hente faktisk respons fra den keyen her
+                    batch_deal_df = pd.DataFrame(json.loads(response.text)['flyers'])
+                    batch_deal_df = batch_deal_df.rename(columns={"image_index":"page_number"})
+                    print(f'\nDeals successfully extracted from batch nr. {batch_n} ({flyer_batch[0].store} | {flyer_batch[-1].store})')
+                    return batch_deal_df
+
+                except Exception as e:
+                    print(f"  API request failed (attempt {attempt + 1}/{max_retries}): {e}")
+                except exceptions.ResourceExhausted:
+                        model.is_exhausted = True
+                        print(f"Error 429 motatt. Slutter nå å bruke {model.name}.")
+                        return None
+
 
                 if attempt < max_retries - 1:
                     time.sleep(5)
                 else:
                     print(f"  Final API request failed. Response: {response.text if 'response' in locals() else 'No response'}")
                     errorFlag = True
-            except (KeyError, IndexError, json.JSONDecodeError, ValueError) as e:
-                print(f"  Error parsing API response (attempt {attempt + 1}/{max_retries}): {e}")
-                print(f"  Received data: {response.text if 'response' in locals() else 'No response'}")
-                if attempt < max_retries - 1:
-                    time.sleep(5)
-                else:
-                    errorFlag = True
-            
-            attempt += 1
-        if errorFlag:
-            print(f'\n\n Batch nr {batch_n} av {n_batches} har ikke blitt behandlet. Går videre til neste batch.\n\n')
-            failed_batches[(batchidx, n_batches)] = flyer_batch
+                
+                    attempt += 1
+                if errorFlag:
+                    print(f'\n\n Batch nr {batch_n} av {n_batches} har ikke blitt behandlet. Går videre til neste batch.\n\n')
+                    failed_batches[(batchidx, n_batches)] = flyer_batch
+                    return None
+                
+
+
             return None
-        
-
-
-        return None
 
     def process_all_flyers(batchsize=batchsize):
         """
@@ -195,44 +179,18 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
 
         class flyer():
             '''Generell flyer-klasse. Tar inn store, acquired_date, page_number, category_key og img_path.
-            
-            Har metode for å produsere ferdig "deals"-objekt som kan videresendes til save_json
             '''
 
             def __init__(self, prop):
                 self.store = prop['store']
-                self.acquired_date = prop['acquired_date']
                 self.page_number = prop['page_number']
                 self.img_path = prop['img_path']
             
             def __repr__(self):
                 return f"({self.store}-{self.page_number})"
-
-            def create_dealsobj(self):
-                processed_deals = {}
-                if hasattr(self, 'categorized_deal'):
-                    if self.categorized_deal:
-                        for category_key, category_deals in self.categorized_deal.items():
-                            processed_deals[category_key] = []
-                            for deal in category_deals:
-                                deal['name'] = deal['name'].capitalize()
-                                deal['store'] = self.store
-                                deal['acquired_date'] = self.acquired_date
-                                deal['page_number'] = int(self.page_number)
-                                deal['AI_model_used'] = None if not hasattr(self, 'AI_model_used') else self.AI_model_used
-                                processed_deals[category_key].append(deal)
-                        return processed_deals
-                return None
-            
         
-        all_deals = {
-                'price_deals': [],
-                'percentage_deals': [],
-                'three_for_two_deals': [],
-                'multibuy_for_price_deals': [],
-                'kroner_off_deals': []
-            }
 
+        ALL_DEALS_DF = None
         if add_tmp_json:
 
             json_url = "https://askhf.folk.ntnu.no/temp_JSON/"
@@ -271,14 +229,13 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
 
         batch_image_dict = dict()
         full_flyer_list = list()
-        image_files = []
+        n_images = 0
         for f in os.listdir(IMAGE_INPUT_FOLDER):
             if f.lower().endswith(('.png', '.jpg', '.jpeg')):
                 for shop in BUTIKKER:
                     if shop in f:
                         prop = {
                             'store': shop,
-                            'acquired_date': current_date.date().strftime(r'%d-%m-%Y'),
                             'page_number': f.split('_')[-1].split('.')[0],
                             'img_path': os.path.join(IMAGE_INPUT_FOLDER, f)
                             }
@@ -289,15 +246,15 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
                         else:
                             batch_image_dict[shop] = [curr_flyer]
                         full_flyer_list.append(curr_flyer)
-                        image_files.append(f)
+                        n_images += 1
                         break
 
-        if not image_files:
+        if not batch_image_dict:
             print(f"No image files found in '{IMAGE_INPUT_FOLDER}'.")
             return
         
 
-        print(f"{len(image_files)} bilder skal behandles.")
+        print(f"{n_images} bilder skal behandles.")
 
 
         model = AI_models[0]
@@ -307,68 +264,33 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
             batchsize = math.ceil(len(full_flyer_list)/(RPD_tol*model.rate_limit))
 
 
-        if batchsize > 1:
+        if batchsize >= 1:
             n_batches = math.ceil(len(full_flyer_list)/batchsize)
             batched_flyer_list = np.array_split(full_flyer_list, n_batches)
             for idx, flyer_batch in enumerate(batched_flyer_list):
                 if prev_failed_batches and idx + 1 not in prev_failed_batches:
                     continue
-                analyze_flyer_batch(flyer_batch, model, batchidx=idx, n_batches = n_batches)
-                for flyer in flyer_batch:
-                    processed_deal = flyer.create_dealsobj()
-                    if processed_deal:
-                        for category_key, deals_list in processed_deal.items():
-                            if category_key in all_deals:
-                                for deal in deals_list:
-                                    all_deals[category_key].append(deal)
-                print("  Saving current progress to files...")
-                for category_key, deals_list in all_deals.items():
-                    save_to_json(deals_list, f"{JSON_OUTPUT_FOLDER}/{category_key}.json")
+                deals_df = analyze_flyer_batch(flyer_batch, model, batchidx=idx, n_batches = n_batches)
                 if model.is_exhausted:
                     model_idx = AI_models.index(model)
-                    if model_idx == len(AI_models):
+                    if model_idx == len(AI_models)-1:
                         print('Alle AI-modeller brukt opp. Må stoppe prosessen her.')
                         remaining_batches = full_flyer_list[idx+1:]
                         failed_batches.extend(remaining_batches)
                         break
                     else:
                         model = AI_models[model_idx+1]
+                        deals_df = analyze_flyer_batch(flyer_batch, model, batchidx=idx, n_batches = n_batches)
 
+                if ALL_DEALS_DF is None:
+                    ALL_DEALS_DF = deals_df
+                else:
+                    ALL_DEALS_DF = pd.concat([ALL_DEALS_DF, deals_df], ignore_index=True)
+                grouped_dfs = {key : group for key, group in ALL_DEALS_DF.groupby('deal_type')}
+                print("  Saving current progress to files...")
+                for category_key, df in grouped_dfs.items():
+                    save_to_json(df.dropna(axis=1, how='all'), f"{JSON_OUTPUT_FOLDER}/{category_key}.json")
 
-
-        else:
-            for store, flyer_batch in batch_image_dict.items():
-                print(f'Analyserer nå butikken: {store}')
-                for flyer in flyer_batch:
-                    analyze_flyer_batch([flyer], model)
-                    if hasattr(flyer, "categorized_deal") and flyer.categorized_deal:
-                        time_prev = time.perf_counter()
-
-                        processed_deal = flyer.create_dealsobj()
-                        for category_key, deals_list in processed_deal.items():
-                            if category_key in all_deals:
-                                for deal in deals_list:
-                                    all_deals[category_key].append(deal)
-                        print("  Saving current progress to files...")
-                        for category_key, deals_list in all_deals.items():
-                            save_to_json(deals_list, f"{JSON_OUTPUT_FOLDER}/{category_key}.json")
-
-
-
-                        time_new = time.perf_counter()
-                        analysis_time = time_new - time_prev
-                        if analysis_time < model.sleeptime:
-                            time.sleep(model.sleeptime - analysis_time)
-                            print(f'API is analyzing too quickly. Have to sleep for {model.sleeptime - analysis_time :.3f}s')
-                        if model.is_exhausted:
-                            model_idx = AI_models.index(model)
-                            if model_idx == len(AI_models):
-                                print('Alle AI-modeller brukt opp. Må stoppe prosessen her.')
-                                remaining_batches = full_flyer_list[idx+1:]
-                        failed_batches.extend(remaining_batches)
-                        break
-                    else:
-                        model = AI_models[model_idx+1]
 
         if failed_batches:
             final_nbatch_list = []
