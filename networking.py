@@ -13,12 +13,6 @@ def create_frontend_files(UKE: int, Alle_butikker, nedlastede_butikker):
 
     folder_path = "temp_output/bilder/"
 
-    '''
-    nedlastede_butikker = set()
-    for entry in os.listdir(folder_path):
-        butikknavn = entry.split('_')[0]
-        nedlastede_butikker.add(butikknavn)
-    '''
     utilgjengelige_butikker = set(Alle_butikker).difference(nedlastede_butikker)
 
     if not utilgjengelige_butikker:

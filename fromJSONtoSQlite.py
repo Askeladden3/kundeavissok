@@ -41,16 +41,33 @@ def JSONtoSQlite(dato):
                 page_number INTEGER,
                 price_per_unit DECIMAL (10,2),
                 total_price DECIMAL (10,2)
+                )''',
+            'bogo_deal' : f'''
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                id INTEGER PRIMARY KEY,
+                name TEXT,
+                total_mass DECIMAL (8,3),
+                unit TEXT DEFAULT 'kg',
+                store TEXT NOT NULL,
+                page_number INTEGER,
+                required_amount INTEGER,
+                amount_free INTEGER
                 )'''}
         
         return tableDict[table_name]
     
     def CREATE_SEARCH_TABLE(table_name):
         SQdict = {'standard_deal':              ["CREATE VIRTUAL TABLE IF NOT EXISTS standard_deal_fts USING fts5(name, content='standard_deal', content_rowid='id');",
-                                               "INSERT INTO standard_deal_fts(rowid, name) SELECT id, name FROM standard_deal;",],
+                                                "INSERT INTO standard_deal_fts(rowid, name) SELECT id, name FROM standard_deal;",],
 
-                  'percentage_deal':         ["CREATE VIRTUAL TABLE IF NOT EXISTS percentage_deal_fts USING fts5(name, content='percentage_deal', content_rowid='id');",
-                                               "INSERT INTO percentage_deal_fts(rowid, name) SELECT id, name FROM percentage_deal;",]
+                    'percentage_deal':          ["CREATE VIRTUAL TABLE IF NOT EXISTS percentage_deal_fts USING fts5(name, content='percentage_deal', content_rowid='id');",
+                                                "INSERT INTO percentage_deal_fts(rowid, name) SELECT id, name FROM percentage_deal;",],
+
+
+                    'bogo_deal':                ["CREATE VIRTUAL TABLE IF NOT EXISTS bogo_deal USING fts5(name, content='bogo_deal', content_rowid='id');",
+                                                "INSERT INTO bogo_deal_fts(rowid, name) SELECT id, name FROM bogo_deal;",],
+
+                    
                                                }
         SQcommands = SQdict[table_name]
 
@@ -73,15 +90,7 @@ def JSONtoSQlite(dato):
             json_file = entry.path
             data = pd.read_json(json_file)
             table_name = data['deal_type'][0]
-            data['name_lowercase'] = data['name'].str.lower()
-            #Fjerner duplikatvarer fra samme butikk
-            data.drop_duplicates(subset=['store', 'name_lowercase'], keep='first', ignore_index=True, inplace = True)
-            data.drop(columns=['name_lowercase', 'deal_type'], inplace=True)
-            #Fjerner kolonner som kun har NaN-verdier, nødvendig for strukturen på database-filene
-            data.dropna(axis=1, how='all', inplace = True)
-
-
-
+            data.drop(columns=['deal_type'], inplace=True)
 
             cursor.execute(CREATE_TABLE(table_name))
             conn.commit()

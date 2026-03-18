@@ -21,11 +21,11 @@ missing_stores:
   updateWebsite: true
 
 testing_stuff:
-  test_mode: false
-  BUTIKKER: ['meny']
-  download_kundeaviser: true
+  test_mode: true
+  BUTIKKER: #['meny']
+  download_kundeaviser: false
   skip_parsing: false
-  batchsize: 10 #Hvis satt til None brukes automatisk algoritme, så kan være lettere hvis usikker på hva som er bra
+  batchsize: 17 #Hvis satt til None brukes automatisk algoritme, så kan være lettere hvis usikker på hva som er bra
   prev_failed_batches:  #Liste med failed batches som skal reprosseseres (Ikke idx, men batch_nr (altså hvis 1. batch feilet, så skriv 1 og ikke 0 i listen))
   add_website_JSON: false
   saveFiles: false
