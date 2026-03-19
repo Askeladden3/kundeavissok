@@ -7,18 +7,10 @@ import requests
 import json
 import os
 from bs4 import BeautifulSoup
-from bs4.element import NavigableString
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
-import re
-import time
-import datetime
-import json
-import html as htmllib
-from urllib.request import urlopen
 
 
 def fetch_kundeavis(BUTIKKER, dato, refresh_aviser=False):
@@ -225,14 +217,15 @@ def fetch_kundeavis_mattilbud(dato):
     return kundeavisen
 
 
-def fetch_etilbudsavis(dato):
+def fetch_etilbudsavis(BUTIKKER, dato):
 
-    HELGETILBUDAVISER = {'Bunnpris':'bunnpris', 'REMA-1000':'rema-1000', 'Coop-Mega':'coop-mega', 'Coop-Prix':'coop-prix', 'Extra':'extra', 'KIWI':'kiwi', 'MENY':'meny', 'Obs':'obs', 'Joker':'joker', 'SPAR':'spar'}
+   # HELGETILBUDAVISER = {'Bunnpris':'bunnpris', 'REMA-1000':'rema-1000', 'Coop-Mega':'coop-mega', 'Coop-Prix':'coop-prix', 'Extra':'extra', 'KIWI':'kiwi', 'MENY':'meny', 'Obs':'obs', 'Joker':'joker', 'SPAR':'spar'}
+    HELGETILBUDAVISER = {'bunnpris':'Bunnpris', 'rema-1000':'REMA-1000', 'coop-mega':'Coop-Mega', 'coop-prix':'Coop-Prix', 'extra':'Extra', 'kiwi':'KIWI', 'meny':'MENY', 'obs':'Obs', 'joker':'Joker', 'spar':'SPAR'}
 
-    #['rema-1000', 'kiwi', 'extra','bunnpris','meny','coop-prix','joker','spar','coop-mega','coop-marked','obs']
+
     curr_date, år, uke = dato
     kundeavisen = {}
-    kundeavisen['header'] = [år, uke, list(HELGETILBUDAVISER.values())]
+    kundeavisen['header'] = [år, uke, list(BUTIKKER)]
     failed_stores = []
 
     service = Service(ChromeDriverManager().install())
@@ -240,10 +233,10 @@ def fetch_etilbudsavis(dato):
     options.add_argument("--headless")
 
 
-    for idx, helgetilbud in enumerate(HELGETILBUDAVISER.keys()):
+    for idx, helgetilbud in enumerate(BUTIKKER):
         try:
             driver = webdriver.Chrome(service=service, options=options)
-            url = f"https://www.etilbudsavis.no/{helgetilbud}" 
+            url = f"https://www.etilbudsavis.no/{HELGETILBUDAVISER[helgetilbud]}" 
             driver.get(url)
             time.sleep(1) 
         
@@ -255,7 +248,7 @@ def fetch_etilbudsavis(dato):
                 print('Første regex funket ikke. Prøver regex="kundeavis".')
                 child_element = soup.find("script", string=re.compile(r"kundeavis", re.IGNORECASE))
         
-            elif child_element is None:
+            if child_element is None:
                 print('Andre regex funket ikke. Prøver regex="Coop Mega".')
                 child_element = soup.find("script", string=re.compile(r"Coop Mega", re.IGNORECASE))
 

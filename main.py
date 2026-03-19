@@ -1,7 +1,7 @@
 
 from Gemini_Parser import Gemini_parser
 from fromJSONtoSQlite import JSONtoSQlite
-from kundeavis_fetch import fetch_kundeavis, download_kundeaviser
+from kundeavis_fetch import fetch_kundeavis, download_kundeaviser, fetch_etilbudsavis
 import datetime
 from networking import updateWebsite, create_frontend_files, updateWebsite_testing, zip_and_saveFiles
 import yaml
@@ -23,7 +23,8 @@ def main(params):
 
 
     if params['download_kundeaviser']:
-        avisurls = fetch_kundeavis(BUTIKKER, dato, refresh_aviser = True)
+        #avisurls = fetch_kundeavis(BUTIKKER, dato, refresh_aviser = True)
+        avisurls = fetch_etilbudsavis(BUTIKKER, dato)
         if avisurls:
             download_kundeaviser(dato, avisurls)
 
