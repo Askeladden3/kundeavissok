@@ -13,7 +13,7 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 
 
-def fetch_kundeavis(BUTIKKER, dato, refresh_aviser=False):
+def fetch_kundeavis(BUTIKKER, dato):
     '''Henter urler til alle kundeavis-sider i kupp.vg, og returnerer en dict med butikker som key og liste med urler som value.
     
     Dersom refresh_aviser == True vil programmet forsøke å laste ned ny html-kode fra kupp.vg.no.
@@ -41,21 +41,17 @@ def fetch_kundeavis(BUTIKKER, dato, refresh_aviser=False):
         pass
 
 
-    if refresh_aviser:
-        url = "https://kupp.vg.no/"
+    url = "https://kupp.vg.no/"
 
-        page = urlopen(url)
+    page = urlopen(url)
 
-        html_bytes = page.read()
-        html = html_bytes.decode("utf-8")
+    html_bytes = page.read()
+    html = html_bytes.decode("utf-8")
 
-        with open(htmlDirectory, 'w', encoding='utf-8') as fil:
-            fil.write(html)
-            print('file written successfully!')
+    with open(htmlDirectory, 'w', encoding='utf-8') as fil:
+        fil.write(html)
+        print('file written successfully!')
         
-    else:
-        with open(htmlDirectory, 'r') as fil:
-            html = fil.read()
     
     kundeavisen = {}
     kundeavisen['header'] = [år, uke, BUTIKKER]

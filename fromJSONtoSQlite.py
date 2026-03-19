@@ -27,6 +27,10 @@ def JSONtoSQlite(dato):
                 total_mass DECIMAL (8,3),
                 unit TEXT DEFAULT 'kg',
                 store TEXT NOT NULL,
+                brand TEXT,
+                category TEXT,
+                protein_type TEXT,
+                AI_model_used TEXT,
                 page_number INTEGER,
                 percentage_off INTEGER NOT NULL
                 )''',
@@ -38,6 +42,10 @@ def JSONtoSQlite(dato):
                 total_mass DECIMAL (8,3),
                 unit TEXT DEFAULT 'kg',
                 store TEXT NOT NULL,
+                brand TEXT,
+                category TEXT,
+                protein_type TEXT,
+                AI_model_used TEXT,
                 page_number INTEGER,
                 price_per_unit DECIMAL (10,2),
                 total_price DECIMAL (10,2)
@@ -49,9 +57,13 @@ def JSONtoSQlite(dato):
                 total_mass DECIMAL (8,3),
                 unit TEXT DEFAULT 'kg',
                 store TEXT NOT NULL,
+                brand TEXT,
+                category TEXT,
+                protein_type TEXT,
+                AI_model_used TEXT,
                 page_number INTEGER,
-                required_amount INTEGER,
-                amount_free INTEGER
+                items_received INTEGER,
+                items_paid_for INTEGER
                 )'''}
         
         return tableDict[table_name]
@@ -64,7 +76,7 @@ def JSONtoSQlite(dato):
                                                 "INSERT INTO percentage_deal_fts(rowid, name) SELECT id, name FROM percentage_deal;",],
 
 
-                    'bogo_deal':                ["CREATE VIRTUAL TABLE IF NOT EXISTS bogo_deal USING fts5(name, content='bogo_deal', content_rowid='id');",
+                    'bogo_deal':                ["CREATE VIRTUAL TABLE IF NOT EXISTS bogo_deal_fts USING fts5(name, content='bogo_deal', content_rowid='id');",
                                                 "INSERT INTO bogo_deal_fts(rowid, name) SELECT id, name FROM bogo_deal;",],
 
                     

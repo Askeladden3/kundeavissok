@@ -27,15 +27,17 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
         BAKERY = "bakery"
         SEAFOOD = "seafood"
         SNACKS_CANDY = "snacks_candy"
+        SODA = "soda"
         PRODUCE = "produce"
         OTHER = "other"
 
     class base_deal(BaseModel):
         image_index : int = Field(description="Index of image item is from. Always provided in prompt.")
-        name: str = Field(description="Product name.")
+        name: str = Field(description="Product name. Do not include amount or numbers here.")
         total_mass: Optional[float] = Field(default=None, description='Total weight/volume')
         unit: Optional[str] = Field(default=None, description='"kg", "g" or "l"')
         store: str = Field(description="Store that sells the items in image. Always provided in prompt.")
+        brand : Optional[str] = Field(default=None, description= "If there is an identifiable brand connected to this item write it here. Otherwise, leave null.")
         category: Category = Field(description="Categorize the item based on its visual appearance and name.")
         protein_type: Optional[Literal["beef", "pork", "poultry", "lamb", "mixed", "plant_based"]] = Field(
         default=None, 
@@ -114,7 +116,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
     Gem31_flash_lite = API_model('gemini-3.1-flash-lite-preview', 'Gemini 3.1 Flash Lite', 15, 500)
     #Gem_pro = API_model('pro', 'Gemini Pro', 2, 50)
 
-    AI_models = [Gem31_flash_lite, Gem25_flash]
+    AI_models = [Gem3_flash, Gem31_flash_lite, Gem25_flash]
 
     
     def save_to_json(data : pd.DataFrame, filename):
@@ -306,6 +308,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
                         model = AI_models[model_idx+1]
                         deals_df = analyze_flyer_batch(flyer_batch, model, batchidx=idx, n_batches = n_batches)
 
+                deals_df['AI_model_used'] = model.id
                 if ALL_DEALS_DF is None:
                     ALL_DEALS_DF = deals_df
                 else:
@@ -313,11 +316,17 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
                 grouped_dfs = {key : group for key, group in ALL_DEALS_DF.groupby('deal_type')}
                 print("  Saving current progress to files...")
                 for category_key, df in grouped_dfs.items():
-                    df['name_lowercase'] = df['name'].str.lower()
                     #Fjerner duplikatvarer fra samme butikk
+                    df['name_lowercase'] = df['name'].str.lower()
                     df.drop_duplicates(subset=['store', 'name_lowercase'], keep='first', ignore_index=True, inplace = True)
                     df.drop(columns=['name_lowercase'], inplace=True)
+
+                    where_gram = df['unit'] == 'g'
+                    df.loc[where_gram, 'total_mass'] = df.loc[where_gram, 'total_mass'].apply(lambda x: x/1000)
+                    df.loc[where_gram, 'unit'] = 'kg'
+
                     save_to_json(df.dropna(axis=1, how='all'), f"{JSON_OUTPUT_FOLDER}/{category_key}.json")
+
 
 
         if failed_batches:

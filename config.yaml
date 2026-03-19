@@ -22,8 +22,8 @@ missing_stores:
 
 testing_stuff:
   test_mode: true
-  BUTIKKER: #['meny']
-  download_kundeaviser: false
+  BUTIKKER: ['meny']
+  download_kundeaviser: true
   skip_parsing: false
   batchsize: 17 #Hvis satt til None brukes automatisk algoritme, så kan være lettere hvis usikker på hva som er bra
   prev_failed_batches:  #Liste med failed batches som skal reprosseseres (Ikke idx, men batch_nr (altså hvis 1. batch feilet, så skriv 1 og ikke 0 i listen))
