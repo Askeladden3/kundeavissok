@@ -18,28 +18,27 @@
     .container { max-width: 1200px; margin: 0 auto; }
     h1 {
       text-align: center; color: white; font-size: 2.5rem;
-      margin-bottom: 1rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
       animation: fadeInDown 0.8s ease-out;
     }
     h2 {
-      text-align: center; color: rgb(235, 175, 175); font-size: 1.7rem;
-      margin-bottom: 0.76rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      text-align: center; color: rgb(235, 175, 175); font-size: 1.5rem;
+      margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
       animation: fadeInDown 0.8s ease-out;
     }
     h3 {
       text-align: center; color: rgb(189, 189, 189); font-size: 1rem;
-      margin-bottom: 0.76rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      margin-bottom: 1.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
       animation: fadeInDown 0.8s ease-out;
     }
 
-    /* Search Container & Box */
+    /* Search Bar Logic */
     .search-container {
       background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
-      border-radius: 20px; padding: 2rem; margin-bottom: 2rem;
+      border-radius: 20px; padding: 2rem; margin-bottom: 1rem;
       box-shadow: 0 20px 40px rgba(0,0,0,0.1);
       animation: fadeInUp 0.8s ease-out 0.2s both;
-      position: relative; /* Added for stacking context */
-      z-index: 10; /* Added to ensure search container stays above results */
+      position: relative; z-index: 10; 
     }
     .search-box {
       display: flex; gap: 1rem; max-width: 850px; margin: 0 auto;
@@ -53,108 +52,102 @@
     }
     #search { flex: 1; min-width: 250px; outline: none; }
     #dealType { cursor: pointer; min-width: 150px; appearance: none; }
-    #search:focus, #dealType:focus, .store-filter-btn:focus {
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
 
-    /* Store Filter Dropdown - Fixed positioning */
-    .store-filter-container {
-      position: relative; 
-      min-width: 180px;
-    }
-    .store-filter-btn { 
-      width: 100%; 
-      cursor: pointer; 
-      text-align: left; 
-      position: relative;
-    }
+    /* Store Filter Dropdown */
+    .store-filter-container { position: relative; min-width: 180px; }
+    .store-filter-btn { width: 100%; cursor: pointer; text-align: left; }
     .store-filter-dropdown {
-      display: none;
-      position: absolute;
-      top: 110%;
-      left: 0;
-      background: white;
-      border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-      z-index: 1000; /* Reduced but still high enough */
-      padding: 1rem;
-      width: 220px;
+      display: none; position: absolute; top: 110%; left: 0;
+      background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      z-index: 1000; padding: 1rem; width: 220px;
     }
-    .store-filter-dropdown label {
-      display: block; padding: 0.5rem; cursor: pointer;
-      border-radius: 8px; transition: background-color 0.2s ease;
-    }
+    .store-filter-dropdown label { display: block; padding: 0.5rem; cursor: pointer; border-radius: 8px; }
     .store-filter-dropdown label:hover { background-color: #f0f2f5; }
-    .store-filter-dropdown input { margin-right: 0.8rem; }
 
     /* Search Button */
     .search-btn {
       padding: 1rem 2rem; background: linear-gradient(135deg, #667eea, #764ba2);
       color: white; border: none; border-radius: 50px; font-size: 1.1rem;
       font-weight: 600; cursor: pointer; transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
     }
-    .search-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); }
-    .search-btn:active { transform: translateY(-1px); }
 
-    /* Results */
+    /* Store Color Mappings (The Box Designs) */
+    .bg-extra { background: #ff8200; color: white; }
+    .bg-rema-1000 { 
+        background: #00509e; color: white; 
+        border: 3px solid white; outline: 2px solid #00509e;
+        margin: 2px; /* Prevent outline from being clipped */
+    }
+    .bg-bunnpris { background: #ffcc00; color: #000; font-weight: 800; border: 2px solid #000; }
+    .bg-kiwi { background: #73b51e; color: white; }
+    .bg-meny { background: #da291c; color: white; }
+    .bg-coop-prix { background: #ffef00; color: #000; font-weight: 700; border: 1px solid #ddd; }
+    .bg-joker { background: linear-gradient(135deg, #008a44 50%, #da291c 50%); color: white; text-shadow: 1px 1px 2px black; }
+    .bg-spar { background: #008a44; color: white; border-left: 5px solid white; }
+    .bg-coop-mega { background: #004a25; color: white; border: 1px solid #ffffff33; }
+    .bg-coop-marked { background: #da291c; color: white; border: 2px solid white; outline: 1px solid #da291c; }
+    .bg-obs { background: #003087; color: white; }
+
+    /* Results Grid */
     .results-container {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
       gap: 1.5rem; animation: fadeInUp 0.8s ease-out 0.4s both;
-      position: relative;
-      z-index: 1; /* Lower than search container */
     }
-    .food-card {
-      background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
-      border-radius: 15px; padding: 1.5rem;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-      transition: all 0.3s ease; border: 2px solid transparent;
-      animation: slideInUp 0.5s ease-out; position: relative; overflow: hidden;
-    }
-    .food-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.15); border-color: rgba(102, 126, 234, 0.3); }
-    .food-name { font-size: 1.3rem; font-weight: 700; color: #333; margin-bottom: 0.5rem; line-height: 1.3; }
-    .price-section { margin: 1rem 0; }
-    .units { font-size: 1.2rem; font-weight: 800; color: #4b4e49; margin-bottom: 0.3rem; }
-    .total-price { font-size: 1.8rem; font-weight: 800; color: #2d5016; margin-bottom: 0.3rem; }
-    .price-per-kg { font-size: 1rem; color: #666; font-weight: 500; }
-    .store-info { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee; }
-    .store-name { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 0.4rem 1rem; border-radius: 20px; font-weight: 600; font-size: 0.9rem; }
-    .date-info { color: #888; font-size: 0.85rem; text-align: right; }
-    .deal-info { background: #f8f9fa; padding: 0.5rem 1rem; border-radius: 10px; margin: 0.8rem 0; color: #555; font-weight: 500; text-align: center; }
-    .loading-message, .no-results, .initial-message {
-      grid-column: 1 / -1; text-align: center; padding: 3rem;
-      background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
-      border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); color: #666;
-    }
-    .loading-message { font-style: italic; font-size: 1.1rem; }
-    .no-results { font-size: 1.2rem; }
-    .initial-message { font-size: 1.3rem; font-weight: 300; padding: 4rem 2rem; }
 
-    /* Animations */
+    /* Card Styling */
+    .food-card {
+      background: rgba(255, 255, 255, 0.95); border-radius: 15px; padding: 1.5rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: all 0.3s ease;
+      animation: slideInUp 0.5s ease-out; position: relative; overflow: hidden;
+      display: flex; flex-direction: column; height: 100%; border: 1px solid #eee;
+    }
+    .food-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
+    
+    .card-main-content { flex: 1; display: flex; flex-direction: column; }
+    .food-name { font-size: 1.3rem; font-weight: 700; color: #333; margin-bottom: 0.5rem; line-height: 1.3; }
+    
+    /* Protein Badge - Fixed to Wrap Text */
+    .protein-badge {
+      background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+      color: #1a4a2e; padding: 0.3rem 0.8rem; border-radius: 12px;
+      font-weight: 700; font-size: 0.75rem; 
+      display: inline-flex; width: fit-content; /* This ensures it only encloses the text */
+      margin-bottom: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+
+    .price-section { margin: 0.5rem 0; min-height: 4.5rem; }
+    .units { font-size: 1.1rem; font-weight: 800; color: #4b4e49; }
+    .main-price { font-size: 1.8rem; font-weight: 800; color: #2d5016; line-height: 1.2;}
+    .sub-price { font-size: 0.95rem; color: #666; font-weight: 500; }
+    
+    /* Bottom Info & Tags */
+    .store-info { 
+      display: flex; justify-content: space-between; align-items: flex-end; 
+      margin-top: auto; padding-top: 1rem; border-top: 1px solid #eee; 
+    }
+    .store-tag {
+      padding: 0.5rem 1rem; border-radius: 6px; font-weight: 800;
+      font-size: 0.85rem; text-transform: uppercase;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .right-info { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; }
+    .brand-info { background: #4a4153; color: white; padding: 0.2rem 0.6rem; border-radius: 10px; font-weight: 600; font-size: 0.75rem; }
+    .page-number-info { color: #888; font-size: 0.8rem; font-weight: 500; }
+    .deal-info { background: #f1f3f5; padding: 0.5rem 1rem; border-radius: 10px; margin: 0.5rem 0; color: #444; font-weight: 600; text-align: center; font-size: 0.9rem; }
+
+    .loading-message, .no-results, .initial-message {
+      grid-column: 1 / -1; text-align: center; padding: 4rem;
+      background: rgba(255, 255, 255, 0.9); border-radius: 15px; color: #555; font-size: 1.2rem;
+    }
+
     @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes slideInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Responsive Design */
     @media (max-width: 768px) {
-      body { padding: 10px; }
-      h1 { font-size: 2rem; margin-bottom: 1.5rem; }
-      .search-container { padding: 1.5rem; border-radius: 15px; }
       .search-box { flex-direction: column; align-items: stretch; }
-      #search, .store-filter-container, #dealType { min-width: auto; margin-bottom: 1rem; }
-      .results-container { grid-template-columns: 1fr; gap: 1rem; }
-      .food-card { padding: 1.2rem; }
+      #search, .store-filter-container, #dealType { min-width: auto; margin-bottom: 0.5rem; }
     }
-      /* Fix for iOS automatic zoom on focus */
-    @media screen and (max-width: 768px) {
-      #search, 
-      #dealType, 
-      .store-filter-btn {
-        font-size: 16px !important;
-  }
-    }
-  
   </style>
   <script>
     async function searchFood() {
@@ -169,7 +162,7 @@
         return;
       }
       
-      resultsContainer.innerHTML = '<div class="loading-message">Søker...</div>';
+      resultsContainer.innerHTML = '<div class="loading-message">Søker etter de beste prisene...</div>';
       
       try {
         let fetchUrl = `search.php?q=${encodeURIComponent(query)}&type=${encodeURIComponent(dealType)}`;
@@ -184,7 +177,6 @@
         }
         const data = await response.json();
         
-        if (data.error) { throw new Error(data.error); }
         if (data.length === 0) {
           resultsContainer.innerHTML = `<div class="no-results">Ingen resultater funnet for "${query}"</div>`;
           return;
@@ -195,45 +187,75 @@
         data.forEach((item, index) => {
           const card = document.createElement('div');
           card.className = 'food-card';
-          card.style.animationDelay = `${index * 0.1}s`;
+          card.style.animationDelay = `${index * 0.05}s`;
           
-          let cardContent = '';
+          const storeSlug = item.store ? item.store.toLowerCase().replace(/\s+/g, '-') : 'unknown';
+          const proteinHtml = (item.protein_type && item.protein_type.trim() !== '') 
+              ? `<div class="protein-badge">${item.protein_type}</div>` : '';
+          const massInfo = (item.total_mass && !isNaN(item.total_mass)) 
+              ? `<div class="deal-info">📦 ${item.total_mass.toFixed(2)} ${item.unit || 'kg'}</div>` : '';
 
-          if (item.deal_type === 'price' || item.deal_type === 'percentage') {
-              let dealBadge = '';
-              if(item.deal_type === 'percentage' && item.percentage_off) {
-                  dealBadge = `<div class="deal-info">🏷️ ${item.percentage_off}% rabatt</div>`;
-                  dealBadge = '';
-              }
-              //mainPrice = Pris Per Kg/L eller prosent avslag || subPrice = Totalpris eller ingenting
-              const mainPrice = (item.price_per_unit && !isNaN(item.price_per_unit)) ? `${parseFloat(item.price_per_unit).toFixed(2)} <span class="units">kr/${item.unit}</span>` :  (item.deal_type === 'percentage' ? ` -${item.percentage_off}% `: '');
-              const subPrice = (item.total_price && !isNaN(item.total_price)) ? `kr ${parseFloat(item.total_price).toFixed(2)}` : '';
-              const massInfo = (item.total_mass && !isNaN(item.total_mass)) ? `📦 ${item.total_mass} ${item.unit || ''}` : '';
-              cardContent = `<div class="food-name">${item.name || ''}</div>${dealBadge}<div class="price-section"><div class="total-price">${mainPrice}</div><div class="price-per-kg">${subPrice}</div></div><div class="deal-info">${massInfo}</div>`;
+          let cardContent = '';
+          if (item.percentage_off !== undefined && item.percentage_off !== null) {
+              cardContent = `
+                  <div class="card-main-content">
+                      <div class="food-name">${item.name || 'Ukjent Vare'}</div>
+                      ${proteinHtml}
+                      <div class="price-section">
+                          <div class="main-price">-${item.percentage_off}%</div>
+                      </div>
+                      ${massInfo}
+                  </div>`;
+          } else if (item.items_received !== undefined && item.items_received !== null) {
+              cardContent = `
+                  <div class="card-main-content">
+                      <div class="food-name">${item.name || 'Ukjent Vare'}</div>
+                      ${proteinHtml}
+                      <div class="deal-info" style="font-size: 1.1rem; padding: 1rem;">
+                          🛒 Ta ${item.items_received}, betal for ${item.items_paid_for || (item.items_received - 1)}
+                      </div>
+                      ${massInfo}
+                  </div>`;
           } else {
-              let dealInfo = '';
-              switch(item.deal_type) {
-                case 'kroner_off': dealInfo = `<div class="deal-info">-${item.amount_subtracted}kr 💰</div>`; break;
-                case 'multibuy': dealInfo = `<div class="deal-info">🛒 ${item.amount_of_wares} stk for kr ${parseFloat(item.set_price).toFixed(0)}</div>`; break;
-                case 'three_for_two': dealInfo = `<div class="deal-info">🎯 Kjøp 3, betal for 2</div>`; break;
-              }
-              cardContent = `<div class="food-name">${item.name || ''}</div>${dealInfo}`;
+              const mainPrice = (item.price_per_unit && !isNaN(item.price_per_unit)) 
+                  ? `${parseFloat(item.price_per_unit).toFixed(2)} <span class="units">kr/${item.unit || 'kg'}</span>` : '&nbsp;';
+              const subPrice = (item.total_price && !isNaN(item.total_price)) 
+                  ? `${parseFloat(item.total_price).toFixed(2)} kr` : '&nbsp;';
+              cardContent = `
+                  <div class="card-main-content">
+                      <div class="food-name">${item.name || 'Ukjent Vare'}</div>
+                      ${proteinHtml}
+                      <div class="price-section">
+                          <div class="main-price">${mainPrice}</div>
+                          <div class="sub-price">${subPrice}</div>
+                      </div>
+                      ${massInfo}
+                  </div>`;
           }
 
-          card.innerHTML = `${cardContent}<div class="store-info"><div class="store-name">${item.store || ''}</div><div class="date-info">${item.avis_date || ''}<br>Side: ${item.page_number || ''}</div></div>`;
-          resultsContainer.appendChild(card);
+          const brandHtml = (item.brand && item.brand.trim() !== '') ? `<div class="brand-info">${item.brand}</div>` : '';
+          const pageHtml = item.page_number ? `<div class="page-number-info">Side: ${item.page_number}</div>` : '';
 
+          card.innerHTML = `
+              ${cardContent}
+              <div class="store-info">
+                  <div class="store-tag bg-${storeSlug}">${item.store || 'Ukjent'}</div>
+                  <div class="right-info">
+                      ${brandHtml}
+                      ${pageHtml}
+                  </div>
+              </div>`;
+          
+          resultsContainer.appendChild(card);
         });
       } catch (error) {
-        console.error('Search error:', error);
-        resultsContainer.innerHTML = `<div class="no-results">Feil ved søking: ${error.message}. Prøv igjen senere.</div>`;
+        resultsContainer.innerHTML = `<div class="no-results">Feil ved søking: ${error.message}.</div>`;
       }
     }
     
     document.addEventListener('DOMContentLoaded', function() {
       const storeFilterBtn = document.querySelector('.store-filter-btn');
       const storeFilterDropdown = document.querySelector('.store-filter-dropdown');
-      // --- "Vis alle butikker" logikk ---
       const selectAllCheckbox = document.getElementById('select-all-stores');
       const storeCheckboxes = document.querySelectorAll('.store-filter-dropdown input[type="checkbox"]:not(#select-all-stores)');
 
@@ -243,29 +265,15 @@
           });
       }
 
-
-      // --- FIX for dropdown ---
-      // Toggle dropdown on button click and stop the event from reaching the document
-      storeFilterBtn.addEventListener('click', (event) => {
-          event.stopPropagation(); 
+      storeFilterBtn.addEventListener('click', (e) => {
+          e.stopPropagation(); 
           storeFilterDropdown.style.display = storeFilterDropdown.style.display === 'block' ? 'none' : 'block';
       });
 
-      // Close dropdown if clicking anywhere else on the page
-      document.addEventListener('click', () => {
-          storeFilterDropdown.style.display = 'none';
-      });
-
-      // Prevent dropdown from closing when clicking inside it
-      storeFilterDropdown.addEventListener('click', (event) => {
-          event.stopPropagation();
-      });
-      // --- END FIX ---
-
+      document.addEventListener('click', () => { storeFilterDropdown.style.display = 'none'; });
+      storeFilterDropdown.addEventListener('click', (e) => { e.stopPropagation(); });
       document.getElementById('search').addEventListener('keypress', (e) => { if (e.key === 'Enter') searchFood(); });
-      document.getElementById('search').addEventListener('input', (e) => { if (!e.target.value.trim()) document.querySelector('.results-container').innerHTML = '<div class="initial-message">Skriv inn en matvare for å søke</div>'; });
     });
-
   </script>
 </head>
 <body>
@@ -276,31 +284,34 @@
     <div class="search-container">
       <div class="search-box">
         <div class="store-filter-container">
-    <button class="store-filter-btn">Velg Butikker</button>
-    <div class="store-filter-dropdown">
-        <label><input type="checkbox" id="select-all-stores"> Vis alle butikker</label>
-        <hr>
-        <label><input type="checkbox" value="extra"> Coop Extra</label>
-        <label><input type="checkbox" value="rema-1000"> Rema 1000</label>
-        <label><input type="checkbox" value="bunnpris"> Bunnpris</label>
-        <label><input type="checkbox" value="kiwi"> Kiwi</label>
-        <label><input type="checkbox" value="meny"> Meny</label>
-        <label><input type="checkbox" value="coop-prix"> Coop Prix</label>
-        <label><input type="checkbox" value="joker"> Joker</label>
-        <label><input type="checkbox" value="spar"> Spar</label>
-        <label><input type="checkbox" value="coop-mega"> Coop Mega</label>
-        <label><input type="checkbox" value="coop-marked"> Coop Marked</label>
-        <label><input type="checkbox" value="obs"> Obs</label>
-    </div>
+          <button class="store-filter-btn">Velg Butikker</button>
+          <div class="store-filter-dropdown">
+            <label><input type="checkbox" id="select-all-stores"> Vis alle butikker</label>
+            <hr>
+            <label><input type="checkbox" value="extra"> Coop Extra</label>
+            <label><input type="checkbox" value="rema-1000"> Rema 1000</label>
+            <label><input type="checkbox" value="bunnpris"> Bunnpris</label>
+            <label><input type="checkbox" value="kiwi"> Kiwi</label>
+            <label><input type="checkbox" value="meny"> Meny</label>
+            <label><input type="checkbox" value="coop-prix"> Coop Prix</label>
+            <label><input type="checkbox" value="joker"> Joker</label>
+            <label><input type="checkbox" value="spar"> Spar</label>
+            <label><input type="checkbox" value="coop-mega"> Coop Mega</label>
+            <label><input type="checkbox" value="coop-marked"> Coop Marked</label>
+            <label><input type="checkbox" value="obs"> Obs</label>
+          </div>
         </div>
+        
         <select id="dealType">
-          <option value="pris-salg">Standard Salg</option>
-          <option value="annet type salg">Annet type salg</option>
+          <option value="salg">Salg</option>
+          <option value="bogo">Buy one get one free o.l</option>
         </select>
+        
         <input type="text" id="search" placeholder="Søk etter matvare...">
         <button class="search-btn" onclick="searchFood()">🔍 Søk</button>
       </div>
     </div>
+    
     <div class="results-container">
       <div class="initial-message">Skriv inn en matvare for å søke</div>
     </div>

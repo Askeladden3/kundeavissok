@@ -88,6 +88,7 @@ def JSONtoSQlite(dato):
             cursor.execute(command)
 
 
+    protein_dict = {None:None, "beef" : "Ku", "pork" : "Svin", "poultry": "Kylling", "lamb" : "Lam", "mixed": "Blandet", "plant_based": "Plante-basert"}
 
 
     JSON_dirpath = f'temp_output/results_JSON'
@@ -103,6 +104,7 @@ def JSONtoSQlite(dato):
             data = pd.read_json(json_file)
             table_name = data['deal_type'][0]
             data.drop(columns=['deal_type'], inplace=True)
+            data['protein_type'] = data['protein_type'].map(protein_dict)
 
             cursor.execute(CREATE_TABLE(table_name))
             conn.commit()
@@ -119,3 +121,11 @@ def JSONtoSQlite(dato):
             conn.commit()
 
     return unique_stores
+
+if __name__ == '__main__':
+    current_date = datetime.now()
+    år = current_date.year
+    uke = current_date.date().isocalendar()[1]
+    dato = [current_date, år, uke]
+
+    JSONtoSQlite(dato)

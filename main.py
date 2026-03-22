@@ -45,4 +45,4 @@ def main(params):
 with open('config.yaml', 'r') as fil:
     cfg = yaml.safe_load(fil)
 
-main(cfg['testing_stuff'])
+main(cfg['standard'])

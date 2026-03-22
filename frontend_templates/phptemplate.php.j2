@@ -1,11 +1,11 @@
 <?php
 
 // ===================================================
-//  Enable CORS for alternate domain (kuso.fuhr.no)
+//  Enable CORS
 // ===================================================
 $allowed_origins = [
-    'https://kuso.fuhr.no',          // your alternate domain
-    'https://www.kuso.fuhr.no',      // optional: add if www-version also forwards
+    'https://kuso.fuhr.no',
+    'https://www.kuso.fuhr.no',
 ];
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
@@ -15,23 +15,20 @@ if (in_array($origin, $allowed_origins)) {
     header("Access-Control-Allow-Headers: Content-Type");
 }
 
-// Respond early to CORS preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
-
-// --- Configuration & Setup ---
 header('Content-Type: application/json');
 $databaseFile = __DIR__ . "/databaser/kundeavis_{{search_uke}}.db";
 
-// --- Database Connection ---
 if (!file_exists($databaseFile)) {
     http_response_code(500);
     echo json_encode(['error' => 'Database file not found.']);
     exit();
 }
+
 try {
     $conn = new PDO('sqlite:' . $databaseFile);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -52,12 +49,9 @@ if (empty($query)) {
 }
 
 $searchParam = "%" . $query . "%";
-$sql = '';
-$params = [];
-
-// --- Store Filtering Logic (Corrected) ---
 $storeClause = '';
 $storeParams = [];
+
 if (!empty($storesFilter)) {
     $storeList = array_filter(array_map('trim', explode(',', $storesFilter)), function($v){ return $v !== ''; });
     if (!empty($storeList)) {
@@ -67,15 +61,18 @@ if (!empty($storesFilter)) {
     }
 }
 
-// --- Query Building ---
 try {
-    if ($dealType === 'pris-salg') {
+    $params = [];
+    $sql = '';
+
+    // MATCHING THE NEW FRONTEND: 'salg' and 'bogo'
+    if ($dealType === 'salg') {
         $sql = "
             SELECT 
                 id, name, percentage_off, 
-                NULL as total_price, NULL as price_per_unit, NULL as total_mass, NULL as unit,
-                store, avis_date, page_number, 'percentage' as deal_type, 1 as deal_priority
-            FROM percentage_deals 
+                NULL as total_price, NULL as price_per_unit, total_mass, unit,
+                store, page_number, brand, category, protein_type
+            FROM percentage_deal 
             WHERE name LIKE ? {$storeClause}
 
             UNION ALL
@@ -83,68 +80,39 @@ try {
             SELECT 
                 id, name, NULL as percentage_off, 
                 total_price, price_per_unit, total_mass, unit,
-                store, avis_date, page_number, 'price' as deal_type, 2 as deal_priority
-            FROM price_deals 
+                store, page_number, brand, category, protein_type
+            FROM standard_deal 
             WHERE name LIKE ? {$storeClause}
 
-            ORDER BY deal_priority ASC, price_per_unit ASC
+            ORDER BY price_per_unit ASC
         ";
 
-        // Build params in the exact same order as the question marks appear in SQL:
-        // first SELECT: 1 param for name + N params for stores (if present)
-        // second SELECT: 1 param for name + N params for stores (if present)
-        $params = [];
-        // first select params
+        // First select params
         $params[] = $searchParam;
         if (!empty($storeParams)) { $params = array_merge($params, $storeParams); }
-        // second select params
+        // Second select params
         $params[] = $searchParam;
         if (!empty($storeParams)) { $params = array_merge($params, $storeParams); }
 
-    } elseif ($dealType === 'annet type salg') {
+    } elseif ($dealType === 'bogo') {
         $sql = "
             SELECT 
-                id, name, amount_subtracted, NULL as amount_of_wares, NULL as set_price, 
-                store, avis_date, page_number, 'kroner_off' as deal_type
-            FROM kroner_off_deals 
+                id, name, items_received, items_paid_for, 
+                total_mass, unit, store, page_number, brand, category, protein_type
+            FROM bogo_deal 
             WHERE name LIKE ? {$storeClause}
-
-            UNION ALL
-
-            SELECT 
-                id, name, NULL as amount_subtracted, amount_of_wares, set_price, 
-                store, avis_date, page_number, 'multibuy' as deal_type
-            FROM multibuy_for_price_deals 
-            WHERE name LIKE ? {$storeClause}
-
-            UNION ALL
-
-            SELECT 
-                id, name, NULL as amount_subtracted, NULL as amount_of_wares, NULL as set_price, 
-                store, avis_date, page_number, 'three_for_two' as deal_type
-            FROM three_for_two_deals 
-            WHERE name LIKE ? {$storeClause}
+            ORDER BY name ASC
         ";
 
-        // params: for each SELECT -> name + store params
-        $params = [];
-        // first
-        $params[] = $searchParam;
-        if (!empty($storeParams)) { $params = array_merge($params, $storeParams); }
-        // second
-        $params[] = $searchParam;
-        if (!empty($storeParams)) { $params = array_merge($params, $storeParams); }
-        // third
         $params[] = $searchParam;
         if (!empty($storeParams)) { $params = array_merge($params, $storeParams); }
 
     } else {
         http_response_code(400);
-        echo json_encode(['error' => 'Invalid deal type specified.']);
+        echo json_encode(['error' => "Invalid deal type specified: $dealType"]);
         exit();
     }
 
-    // --- Execution ---
     $stmt = $conn->prepare($sql);
     $stmt->execute($params);
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -152,12 +120,9 @@ try {
     echo json_encode($results);
 
 } catch (Exception $e) {
-    // For debugging: return a helpful error message (in production you might hide details)
     http_response_code(500);
     echo json_encode(['error' => 'Search failed: ' . $e->getMessage()]);
-    exit();
 } finally {
     $conn = null;
 }
-
 ?>
