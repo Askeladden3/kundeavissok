@@ -9,3 +9,4 @@ google-genai
 PyYAML
 pandas
 google-api-core
+Pillow
