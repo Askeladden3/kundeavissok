@@ -5,6 +5,7 @@ from kundeavis_fetch import fetch_kundeavis, download_kundeaviser, fetch_etilbud
 import datetime
 from networking import updateWebsite, create_frontend_files, updateWebsite_testing, zip_and_saveFiles
 import yaml
+import os
 
 def main(params):
 
@@ -20,6 +21,11 @@ def main(params):
     år = current_date.year
     uke = current_date.date().isocalendar()[1]
     dato = [current_date, år, uke]
+    try:
+        os.mkdir('temp_output')
+    except:
+        pass
+
 
 
     if params['download_kundeaviser']:
