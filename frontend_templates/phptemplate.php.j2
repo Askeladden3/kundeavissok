@@ -42,16 +42,15 @@ try {
 $query = isset($_GET['q']) ? trim($_GET['q']) : '';
 $dealType = isset($_GET['type']) ? trim($_GET['type']) : '';
 $storesFilter = isset($_GET['stores']) ? trim($_GET['stores']) : '';
+$categoryFilter = isset($_GET['category']) ? trim($_GET['category']) : '';
+$proteinFilter = isset($_GET['protein_type']) ? trim($_GET['protein_type']) : '';
 
-if (empty($query)) {
-    echo json_encode([]);
-    exit();
-}
 
 $searchParam = "%" . $query . "%";
+
+// Stores Clause
 $storeClause = '';
 $storeParams = [];
-
 if (!empty($storesFilter)) {
     $storeList = array_filter(array_map('trim', explode(',', $storesFilter)), function($v){ return $v !== ''; });
     if (!empty($storeList)) {
@@ -59,6 +58,22 @@ if (!empty($storesFilter)) {
         $storeClause = " AND store IN ($placeholders)";
         $storeParams = array_values($storeList);
     }
+}
+
+// Category Clause
+$catClause = '';
+$catParams = [];
+if (!empty($categoryFilter)) {
+    $catClause = " AND category = ?";
+    $catParams[] = $categoryFilter;
+}
+
+// Protein Clause (Only apply if category is 'meat' now)
+$protClause = '';
+$protParams = [];
+if (!empty($proteinFilter) && $categoryFilter === 'meat') {
+    $protClause = " AND protein_type = ?";
+    $protParams[] = $proteinFilter;
 }
 
 try {
@@ -73,7 +88,7 @@ try {
                 NULL as total_price, NULL as price_per_unit, total_mass, unit,
                 store, page_number, brand, category, protein_type
             FROM percentage_deal 
-            WHERE name LIKE ? {$storeClause}
+            WHERE name LIKE ? {$storeClause} {$catClause} {$protClause}
 
             UNION ALL
 
@@ -82,17 +97,22 @@ try {
                 total_price, price_per_unit, total_mass, unit,
                 store, page_number, brand, category, protein_type
             FROM standard_deal 
-            WHERE name LIKE ? {$storeClause}
+            WHERE name LIKE ? {$storeClause} {$catClause} {$protClause}
 
             ORDER BY price_per_unit ASC
         ";
 
-        // First select params
+        // Params for first SELECT statement in UNION
         $params[] = $searchParam;
         if (!empty($storeParams)) { $params = array_merge($params, $storeParams); }
-        // Second select params
+        if (!empty($catParams))   { $params = array_merge($params, $catParams); }
+        if (!empty($protParams))  { $params = array_merge($params, $protParams); }
+        
+        // Params for second SELECT statement in UNION (must duplicate them)
         $params[] = $searchParam;
         if (!empty($storeParams)) { $params = array_merge($params, $storeParams); }
+        if (!empty($catParams))   { $params = array_merge($params, $catParams); }
+        if (!empty($protParams))  { $params = array_merge($params, $protParams); }
 
     } elseif ($dealType === 'bogo') {
         $sql = "
@@ -100,12 +120,14 @@ try {
                 id, name, items_received, items_paid_for, 
                 total_mass, unit, store, page_number, brand, category, protein_type
             FROM bogo_deal 
-            WHERE name LIKE ? {$storeClause}
+            WHERE name LIKE ? {$storeClause} {$catClause} {$protClause}
             ORDER BY name ASC
         ";
 
         $params[] = $searchParam;
         if (!empty($storeParams)) { $params = array_merge($params, $storeParams); }
+        if (!empty($catParams))   { $params = array_merge($params, $catParams); }
+        if (!empty($protParams))  { $params = array_merge($params, $protParams); }
 
     } else {
         http_response_code(400);

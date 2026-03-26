@@ -6,78 +6,27 @@
   <link rel="manifest" href="/manifest.json" />
   <title>Handlelurt</title>
   <style>
-    /* General Styling */
+    /* ... (Behold all den eksisterende CSS-en nøyaktig som før) ... */
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      padding: 20px;
-      color: #333;
-    }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; color: #333; }
     .container { max-width: 1200px; margin: 0 auto; }
-    h1 {
-      text-align: center; color: white; font-size: 2.5rem;
-      margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-      animation: fadeInDown 0.8s ease-out;
-    }
-    h2 {
-      text-align: center; color: rgb(235, 175, 175); font-size: 1.5rem;
-      margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-      animation: fadeInDown 0.8s ease-out;
-    }
-    h3 {
-      text-align: center; color: rgb(189, 189, 189); font-size: 1rem;
-      margin-bottom: 1.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-      animation: fadeInDown 0.8s ease-out;
-    }
-
-    /* Search Bar Logic */
-    .search-container {
-      background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
-      border-radius: 20px; padding: 2rem; margin-bottom: 1rem;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-      animation: fadeInUp 0.8s ease-out 0.2s both;
-      position: relative; z-index: 10; 
-    }
-    .search-box {
-      display: flex; gap: 1rem; max-width: 850px; margin: 0 auto;
-      flex-wrap: wrap; justify-content: center; align-items: center;
-    }
-
-    /* Form Elements */
-    #search, #dealType, .store-filter-btn {
-      padding: 1rem 1.5rem; border: 2px solid #e0e0e0; border-radius: 50px;
-      font-size: 1.1rem; background: white; transition: all 0.3s ease;
-    }
-    #search { flex: 1; min-width: 250px; outline: none; }
-    #dealType { cursor: pointer; min-width: 150px; appearance: none; }
-
-    /* Store Filter Dropdown */
+    h1 { text-align: center; color: white; font-size: 2.5rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); animation: fadeInDown 0.8s ease-out; }
+    h2 { text-align: center; color: rgb(235, 175, 175); font-size: 1.5rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); animation: fadeInDown 0.8s ease-out; }
+    h3 { text-align: center; color: rgb(189, 189, 189); font-size: 1rem; margin-bottom: 1.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); animation: fadeInDown 0.8s ease-out; }
+    .search-container { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 20px; padding: 2rem; margin-bottom: 1rem; box-shadow: 0 20px 40px rgba(0,0,0,0.1); animation: fadeInUp 0.8s ease-out 0.2s both; position: relative; z-index: 10; }
+    .search-box { display: flex; gap: 1rem; max-width: 1000px; margin: 0 auto; flex-wrap: wrap; justify-content: center; align-items: center; }
+    #search, #dealType, #categoryFilter, #proteinFilter, .store-filter-btn { padding: 1rem 1.5rem; border: 2px solid #e0e0e0; border-radius: 50px; font-size: 1.1rem; background: white; transition: all 0.3s ease; }
+    #search { flex: 1; min-width: 200px; outline: none; }
+    #dealType, #categoryFilter, #proteinFilter { cursor: pointer; min-width: 150px; appearance: none; }
+    .hidden { display: none !important; }
     .store-filter-container { position: relative; min-width: 180px; }
     .store-filter-btn { width: 100%; cursor: pointer; text-align: left; }
-    .store-filter-dropdown {
-      display: none; position: absolute; top: 110%; left: 0;
-      background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-      z-index: 1000; padding: 1rem; width: 220px;
-    }
+    .store-filter-dropdown { display: none; position: absolute; top: 110%; left: 0; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); z-index: 1000; padding: 1rem; width: 220px; }
     .store-filter-dropdown label { display: block; padding: 0.5rem; cursor: pointer; border-radius: 8px; }
     .store-filter-dropdown label:hover { background-color: #f0f2f5; }
-
-    /* Search Button */
-    .search-btn {
-      padding: 1rem 2rem; background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white; border: none; border-radius: 50px; font-size: 1.1rem;
-      font-weight: 600; cursor: pointer; transition: all 0.3s ease;
-    }
-
-    /* Store Color Mappings (The Box Designs) */
+    .search-btn { padding: 1rem 2rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 50px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
     .bg-extra { background: #ff8200; color: white; }
-    .bg-rema-1000 { 
-        background: #00509e; color: white; 
-        border: 3px solid white; outline: 2px solid #00509e;
-        margin: 2px; /* Prevent outline from being clipped */
-    }
+    .bg-rema-1000 { background: #00509e; color: white; border: 3px solid white; outline: 2px solid #00509e; margin: 2px; }
     .bg-bunnpris { background: #ffcc00; color: #000; font-weight: 800; border: 2px solid #000; }
     .bg-kiwi { background: #73b51e; color: white; }
     .bg-meny { background: #da291c; color: white; }
@@ -87,80 +36,55 @@
     .bg-coop-mega { background: #004a25; color: white; border: 1px solid #ffffff33; }
     .bg-coop-marked { background: #da291c; color: white; border: 2px solid white; outline: 1px solid #da291c; }
     .bg-obs { background: #003087; color: white; }
-
-    /* Results Grid */
-    .results-container {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 1.5rem; animation: fadeInUp 0.8s ease-out 0.4s both;
-    }
-
-    /* Card Styling */
-    .food-card {
-      background: rgba(255, 255, 255, 0.95); border-radius: 15px; padding: 1.5rem;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: all 0.3s ease;
-      animation: slideInUp 0.5s ease-out; position: relative; overflow: hidden;
-      display: flex; flex-direction: column; height: 100%; border: 1px solid #eee;
-    }
+    .results-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; animation: fadeInUp 0.8s ease-out 0.4s both; }
+    .food-card { background: rgba(255, 255, 255, 0.95); border-radius: 15px; padding: 1.5rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: all 0.3s ease; animation: slideInUp 0.5s ease-out; position: relative; overflow: hidden; display: flex; flex-direction: column; height: 100%; border: 1px solid #eee; }
     .food-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
-    
     .card-main-content { flex: 1; display: flex; flex-direction: column; }
     .food-name { font-size: 1.3rem; font-weight: 700; color: #333; margin-bottom: 0.5rem; line-height: 1.3; }
-    
-    /* Protein Badge - Fixed to Wrap Text */
-    .protein-badge {
-      background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-      color: #1a4a2e; padding: 0.3rem 0.8rem; border-radius: 12px;
-      font-weight: 700; font-size: 0.75rem; 
-      display: inline-flex; width: fit-content; /* This ensures it only encloses the text */
-      margin-bottom: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;
-    }
-
+    .protein-badge { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: #1a4a2e; padding: 0.3rem 0.8rem; border-radius: 12px; font-weight: 700; font-size: 0.75rem; display: inline-flex; width: fit-content; margin-bottom: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
     .price-section { margin: 0.5rem 0; min-height: 4.5rem; }
     .units { font-size: 1.1rem; font-weight: 800; color: #4b4e49; }
     .main-price { font-size: 1.8rem; font-weight: 800; color: #2d5016; line-height: 1.2;}
     .sub-price { font-size: 0.95rem; color: #666; font-weight: 500; }
-    
-    /* Bottom Info & Tags */
-    .store-info { 
-      display: flex; justify-content: space-between; align-items: flex-end; 
-      margin-top: auto; padding-top: 1rem; border-top: 1px solid #eee; 
-    }
-    .store-tag {
-      padding: 0.5rem 1rem; border-radius: 6px; font-weight: 800;
-      font-size: 0.85rem; text-transform: uppercase;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
+    .store-info { display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; padding-top: 1rem; border-top: 1px solid #eee; }
+    .store-tag { padding: 0.5rem 1rem; border-radius: 6px; font-weight: 800; font-size: 0.85rem; text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     .right-info { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; }
     .brand-info { background: #4a4153; color: white; padding: 0.2rem 0.6rem; border-radius: 10px; font-weight: 600; font-size: 0.75rem; }
     .page-number-info { color: #888; font-size: 0.8rem; font-weight: 500; }
     .deal-info { background: #f1f3f5; padding: 0.5rem 1rem; border-radius: 10px; margin: 0.5rem 0; color: #444; font-weight: 600; text-align: center; font-size: 0.9rem; }
-
-    .loading-message, .no-results, .initial-message {
-      grid-column: 1 / -1; text-align: center; padding: 4rem;
-      background: rgba(255, 255, 255, 0.9); border-radius: 15px; color: #555; font-size: 1.2rem;
-    }
-
+    .loading-message, .no-results, .initial-message { grid-column: 1 / -1; text-align: center; padding: 4rem; background: rgba(255, 255, 255, 0.9); border-radius: 15px; color: #555; font-size: 1.2rem; }
     @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes slideInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-    @media (max-width: 768px) {
-      .search-box { flex-direction: column; align-items: stretch; }
-      #search, .store-filter-container, #dealType { min-width: auto; margin-bottom: 0.5rem; }
-    }
+    @media (max-width: 768px) { .search-box { flex-direction: column; align-items: stretch; } #search, .store-filter-container, #dealType, #categoryFilter, #proteinFilter { min-width: auto; margin-bottom: 0.5rem; } }
   </style>
   <script>
+    function handleCategoryChange() {
+      const category = document.getElementById("categoryFilter").value;
+      const proteinFilter = document.getElementById("proteinFilter");
+      // Endret til å se etter "meat" i stedet for "kjøtt"
+      if (category === "meat") {
+        proteinFilter.classList.remove("hidden");
+      } else {
+        proteinFilter.classList.add("hidden");
+        proteinFilter.value = ""; 
+      }
+    }
+
     async function searchFood() {
       const query = document.getElementById("search").value.trim();
       const dealType = document.getElementById("dealType").value;
+      const category = document.getElementById("categoryFilter").value;
+      const proteinType = document.getElementById("proteinFilter").value;
+      
       const checkedStores = document.querySelectorAll('.store-filter-dropdown input[type="checkbox"]:checked');
       const selectedStores = Array.from(checkedStores).map(checkbox => checkbox.value);
       const resultsContainer = document.querySelector(".results-container");
       
-      if (!query) {
-        resultsContainer.innerHTML = '<div class="initial-message">Skriv inn en matvare for å søke</div>';
-        return;
-      }
+      // Vi fjerner blokkeringen, men gir en indikasjon på at vi henter alt
+      resultsContainer.innerHTML = query 
+          ? '<div class="loading-message">Søker etter de beste prisene...</div>' 
+          : '<div class="loading-message">Henter alle tilbud som passer filtrene...</div>';
       
       resultsContainer.innerHTML = '<div class="loading-message">Søker etter de beste prisene...</div>';
       
@@ -168,6 +92,13 @@
         let fetchUrl = `search.php?q=${encodeURIComponent(query)}&type=${encodeURIComponent(dealType)}`;
         if (selectedStores.length > 0) {
             fetchUrl += `&stores=${encodeURIComponent(selectedStores.join(','))}`;
+        }
+        if (category) {
+            fetchUrl += `&category=${encodeURIComponent(category)}`;
+        }
+        // Endret til å se etter "meat" her også
+        if (category === "meat" && proteinType) {
+            fetchUrl += `&protein_type=${encodeURIComponent(proteinType)}`;
         }
 
         const response = await fetch(fetchUrl);
@@ -305,6 +236,30 @@
         <select id="dealType">
           <option value="salg">Salg</option>
           <option value="bogo">Buy one get one free o.l</option>
+        </select>
+
+        <select id="categoryFilter" onchange="handleCategoryChange()">
+          <option value="">Alle kategorier</option>
+          <option value="meat">Kjøtt</option>
+          <option value="bread_toppings">Pålegg</option>
+          <option value="dairy">Meieri</option>
+          <option value="eggs">Egg</option>
+          <option value="bakery">Bakevare</option>
+          <option value="seafood">Sjømat</option>
+          <option value="snacks_candy">Snacks/godteri</option>
+          <option value="soda">Brus</option>
+          <option value="produce">Grønnsaker/frukt</option>
+          <option value="other">Annet</option>
+        </select>
+
+        <select id="proteinFilter" class="hidden">
+          <option value="">Alle proteintyper</option>
+          <option value="Ku">Ku</option>
+          <option value="Svin">Svin</option>
+          <option value="Kylling">Kylling</option>
+          <option value="Lam">Lam</option>
+          <option value="Blandet">Blandet</option>
+          <option value="Plante-basert">Plante-basert</option>
         </select>
         
         <input type="text" id="search" placeholder="Søk etter matvare...">

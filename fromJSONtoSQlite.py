@@ -17,51 +17,36 @@ def JSONtoSQlite(dato):
         pass
     db_file = f'temp_output/databaser/kundeavis_{UKE}.db'
 
+    default_table_args = '''
+    id INTEGER PRIMARY KEY,
+    name TEXT,
+    total_mass DECIMAL (8,3),
+    unit TEXT DEFAULT 'kg',
+    store TEXT NOT NULL,
+    brand TEXT,
+    category TEXT,
+    protein_type TEXT,
+    AI_model_used TEXT,
+    page_number INTEGER
+    '''
     
     def CREATE_TABLE(table_name):
         tableDict = {
             'percentage_deal' : f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
-                id INTEGER PRIMARY KEY,
-                name TEXT,
-                total_mass DECIMAL (8,3),
-                unit TEXT DEFAULT 'kg',
-                store TEXT NOT NULL,
-                brand TEXT,
-                category TEXT,
-                protein_type TEXT,
-                AI_model_used TEXT,
-                page_number INTEGER,
+                {default_table_args},
                 percentage_off INTEGER NOT NULL
                 )''',
 
             'standard_deal' : f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
-                id INTEGER PRIMARY KEY,
-                name TEXT,
-                total_mass DECIMAL (8,3),
-                unit TEXT DEFAULT 'kg',
-                store TEXT NOT NULL,
-                brand TEXT,
-                category TEXT,
-                protein_type TEXT,
-                AI_model_used TEXT,
-                page_number INTEGER,
+                {default_table_args},
                 price_per_unit DECIMAL (10,2),
                 total_price DECIMAL (10,2)
                 )''',
             'bogo_deal' : f'''
             CREATE TABLE IF NOT EXISTS {table_name} (
-                id INTEGER PRIMARY KEY,
-                name TEXT,
-                total_mass DECIMAL (8,3),
-                unit TEXT DEFAULT 'kg',
-                store TEXT NOT NULL,
-                brand TEXT,
-                category TEXT,
-                protein_type TEXT,
-                AI_model_used TEXT,
-                page_number INTEGER,
+                {default_table_args},
                 items_received INTEGER,
                 items_paid_for INTEGER
                 )'''}
