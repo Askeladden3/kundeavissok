@@ -5,6 +5,7 @@ import time
 from datetime import datetime
 import sqlite3
 import pandas as pd
+from sqlalchemy import create_engine
 
 
 def JSONtoSQlite(dato):
@@ -53,7 +54,7 @@ def JSONtoSQlite(dato):
         
         return tableDict[table_name]
     
-    def CREATE_SEARCH_TABLE(table_name):
+    def CREATE_SEARCH_TABLE(table_name, conn):
         SQdict = {'standard_deal':              ["CREATE VIRTUAL TABLE IF NOT EXISTS standard_deal_fts USING fts5(name, content='standard_deal', content_rowid='id');",
                                                 "INSERT INTO standard_deal_fts(rowid, name) SELECT id, name FROM standard_deal;",],
 
@@ -70,18 +71,20 @@ def JSONtoSQlite(dato):
 
         for command in SQcommands:
             print(command)
-            cursor.execute(command)
+            conn.execute(command)
 
 
     protein_dict = {None:None, "beef" : "Ku", "pork" : "Svin", "poultry": "Kylling", "lamb" : "Lam", "mixed": "Blandet", "plant_based": "Plante-basert"}
-
-
     JSON_dirpath = f'temp_output/results_JSON'
 
 
     unique_stores = set()
-    conn = sqlite3.connect(db_file)
-    cursor = conn.cursor()
+    USER = os.getenv('DB_USER')
+    PASSWORD = os.getenv('DB_PASS')
+    HOST = os.getenv('DB_HOST')
+    PORT = '3306'
+    DATABASE = os.getenv('DB_NAME')
+    engine = create_engine(f"mysql+pymysql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}")
 
     for entry in os.scandir(JSON_dirpath):
         if entry.is_file():
@@ -91,19 +94,18 @@ def JSONtoSQlite(dato):
             data.drop(columns=['deal_type'], inplace=True)
             data['protein_type'] = data['protein_type'].map(protein_dict)
 
-            cursor.execute(CREATE_TABLE(table_name))
-            conn.commit()
 
             data.to_sql(name=table_name,
-                    con=conn,
+                    con=engine,
                     index=False,
-                    if_exists='append')
+                    if_exists='replace')
             
             stores = set(data['store'])
             unique_stores = unique_stores.union(stores)
             
-            CREATE_SEARCH_TABLE(table_name)
-            conn.commit()
+            with engine.connect() as conn:
+                CREATE_SEARCH_TABLE(table_name, conn)
+                conn.commit()
 
     return unique_stores
 
