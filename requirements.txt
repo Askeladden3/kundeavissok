@@ -11,4 +11,4 @@ pandas
 google-api-core
 Pillow
 pymysql
-pyalchemy
+sqlalchemy
