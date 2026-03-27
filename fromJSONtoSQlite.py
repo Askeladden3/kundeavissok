@@ -19,9 +19,9 @@ def JSONtoSQlite(dato):
     'unit': String(30),
     'store': String(30),
     'brand': String(50),
-    'category': String(),
-    'protein_type': String(),
-    'AI_model_used': String(),
+    'category': String(50),
+    'protein_type': String(25),
+    'AI_model_used': String(100),
     'page_number': Integer()
     }
 
@@ -60,7 +60,12 @@ def JSONtoSQlite(dato):
         if entry.is_file():
             json_file = entry.path
             data = pd.read_json(json_file)
-            table_name = data['deal_type'][0]
+            table_name = entry.name.split('.')[0]
+            if data.empty:
+                with engine.connect() as conn:
+                    conn.execute(text(f'TRUNCATE TABLE {table_name};'))
+                    conn.commit()
+                    continue
             data.drop(columns=['deal_type'], inplace=True)
             data['protein_type'] = data['protein_type'].map(protein_dict)
 

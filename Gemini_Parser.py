@@ -120,15 +120,12 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
 
     
     def save_to_json(data : pd.DataFrame, filename):
-        """Saves a list of data to a JSON file if the list is not empty."""
-        if data is not None:
-            try:
-                data.to_json(filename, force_ascii=False, orient='records', indent=4)
-                print(f"Successfully saved {len(data)} items to '{filename}'.")
-            except IOError as e:
-                print(f"Error writing to output file '{filename}': {e}")
-        else:
-            print(f"No data to save for '{filename}'. File not created.")
+        """Saves a list of data to a JSON file"""
+        try:
+            data.to_json(filename, force_ascii=False, orient='records', indent=4)
+            print(f"Successfully saved {len(data)} items to '{filename}'.")
+        except IOError as e:
+            print(f"Error writing to output file '{filename}': {e}")
 
     def analyze_flyer_batch(flyer_batch, model : API_model, batchidx = None, n_batches=None):
 
