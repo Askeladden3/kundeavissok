@@ -35,7 +35,7 @@ def main(params):
 
     if not params['skip_parsing']:
         Gemini_parser(BUTIKKER, dato, params['add_website_JSON'], params['batchsize'], params['prev_failed_batches'])
-    nedlastede_butikker = JSONtoSQlite(dato)
+    nedlastede_butikker = JSONtoSQlite(dato, params)
     create_frontend_files(uke, Alle_butikker, nedlastede_butikker)
 
     if params['test_mode']:

@@ -8,7 +8,7 @@ import pandas as pd
 from sqlalchemy import create_engine, Integer, String, Float, text
 
 
-def JSONtoSQlite(dato):
+def JSONtoSQlite(dato, cfg):
 
     curr_date, år, UKE = dato
 
@@ -61,11 +61,16 @@ def JSONtoSQlite(dato):
             json_file = entry.path
             data = pd.read_json(json_file)
             table_name = entry.name.split('.')[0]
+
+            if cfg['test_mode']:
+                table_name = 'TEST' + table_name
+
             if data.empty:
                 with engine.connect() as conn:
                     conn.execute(text(f'TRUNCATE TABLE {table_name};'))
                     conn.commit()
                     continue
+
             data.drop(columns=['deal_type'], inplace=True)
             data['protein_type'] = data['protein_type'].map(protein_dict)
 
