@@ -164,7 +164,8 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
                     
                     #LLM formaterer alle deals inn i en key "flyers", så må hente faktisk respons fra den keyen her
                     batch_deal_df = pd.DataFrame(json.loads(response.text)['flyers'])
-                    batch_deal_df = batch_deal_df.rename(columns={"image_index":"page_number"})
+                    if batch_deal_df.empty:
+                        batch_deal_df = batch_deal_df.rename(columns={"image_index":"page_number"})
                     print(f'\nDeals successfully extracted from batch nr. {batch_n} ({flyer_batch[0].store} | {flyer_batch[-1].store})')
                     return batch_deal_df
 
@@ -305,7 +306,8 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
                         model = AI_models[model_idx+1]
                         deals_df = analyze_flyer_batch(flyer_batch, model, batchidx=idx, n_batches = n_batches)
 
-                deals_df['AI_model_used'] = model.id
+                if not deals_df.empty:
+                    deals_df['AI_model_used'] = model.id
                 if ALL_DEALS_DF is None:
                     ALL_DEALS_DF = deals_df
                 else:
