@@ -1,4 +1,23 @@
 <?php
+require_once __DIR__ . '/vendor/autoload.php';
+
+use Dotenv\Dotenv;
+
+// 1. Load the .env file from the current directory
+try {
+    $dotenv = Dotenv::createImmutable(__DIR__);
+    $dotenv->load();
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['error' => '.env file missing or unreadable.']);
+    exit();
+}
+
+// 2. Extract MySQL credentials from .env
+$host = $_ENV['DB_HOST'] ?? 'localhost';
+$db   = $_ENV['DB_NAME'] ?? '';
+$user = $_ENV['DB_USER'] ?? '';
+$pass = $_ENV['DB_PASS'] ?? '';
 
 // ===================================================
 //  Enable CORS
@@ -21,20 +40,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 header('Content-Type: application/json');
-$databaseFile = __DIR__ . "/databaser/kundeavis_{{search_uke}}.db";
 
-if (!file_exists($databaseFile)) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Database file not found.']);
-    exit();
-}
-
+// 3. Connect to MySQL
 try {
-    $conn = new PDO('sqlite:' . $databaseFile);
+    $dsn = "mysql:host=$host;dbname=$db;charset=utf8mb4";
+    $conn = new PDO($dsn, $user, $pass);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
     http_response_code(500);
-    echo json_encode(['error' => 'Database connection failed: ' . $e->getMessage()]);
+    echo json_encode(['error' => 'MySQL connection failed: ' . $e->getMessage()]);
     exit();
 }
 
@@ -45,8 +59,13 @@ $storesFilter = isset($_GET['stores']) ? trim($_GET['stores']) : '';
 $categoryFilter = isset($_GET['category']) ? trim($_GET['category']) : '';
 $proteinFilter = isset($_GET['protein_type']) ? trim($_GET['protein_type']) : '';
 
-
-$searchParam = "%" . $query . "%";
+/**
+ * FULL-TEXT SEARCH PROCESSING
+ * We use Boolean Mode so we can append '*' for partial matching.
+ * If the query is empty, we set it to a dummy value that won't filter anything, 
+ * or we handle the SQL logic below.
+ */
+$searchParam = !empty($query) ? $query . '*' : '';
 
 // Stores Clause
 $storeClause = '';
@@ -68,7 +87,7 @@ if (!empty($categoryFilter)) {
     $catParams[] = $categoryFilter;
 }
 
-// Protein Clause (Only apply if category is 'meat' now)
+// Protein Clause
 $protClause = '';
 $protParams = [];
 if (!empty($proteinFilter) && $categoryFilter === 'meat') {
@@ -76,11 +95,13 @@ if (!empty($proteinFilter) && $categoryFilter === 'meat') {
     $protParams[] = $proteinFilter;
 }
 
+// Full-Text Search Logic: If query is empty, we match everything (1=1)
+$matchClause = !empty($query) ? "MATCH(name) AGAINST(? IN BOOLEAN MODE)" : "1=1";
+
 try {
     $params = [];
     $sql = '';
 
-    // MATCHING THE NEW FRONTEND: 'salg' and 'bogo'
     if ($dealType === 'salg') {
         $sql = "
             SELECT 
@@ -88,7 +109,7 @@ try {
                 NULL as total_price, NULL as price_per_unit, total_mass, unit,
                 store, page_number, brand, category, protein_type
             FROM percentage_deal 
-            WHERE name LIKE ? {$storeClause} {$catClause} {$protClause}
+            WHERE {$matchClause} {$storeClause} {$catClause} {$protClause}
 
             UNION ALL
 
@@ -97,22 +118,18 @@ try {
                 total_price, price_per_unit, total_mass, unit,
                 store, page_number, brand, category, protein_type
             FROM standard_deal 
-            WHERE name LIKE ? {$storeClause} {$catClause} {$protClause}
+            WHERE {$matchClause} {$storeClause} {$catClause} {$protClause}
 
             ORDER BY price_per_unit ASC
         ";
 
-        // Params for first SELECT statement in UNION
-        $params[] = $searchParam;
-        if (!empty($storeParams)) { $params = array_merge($params, $storeParams); }
-        if (!empty($catParams))   { $params = array_merge($params, $catParams); }
-        if (!empty($protParams))  { $params = array_merge($params, $protParams); }
+        // Params for first SELECT
+        if (!empty($query)) { $params[] = $searchParam; }
+        $params = array_merge($params, $storeParams, $catParams, $protParams);
         
-        // Params for second SELECT statement in UNION (must duplicate them)
-        $params[] = $searchParam;
-        if (!empty($storeParams)) { $params = array_merge($params, $storeParams); }
-        if (!empty($catParams))   { $params = array_merge($params, $catParams); }
-        if (!empty($protParams))  { $params = array_merge($params, $protParams); }
+        // Params for second SELECT
+        if (!empty($query)) { $params[] = $searchParam; }
+        $params = array_merge($params, $storeParams, $catParams, $protParams);
 
     } elseif ($dealType === 'bogo') {
         $sql = "
@@ -120,18 +137,16 @@ try {
                 id, name, items_received, items_paid_for, 
                 total_mass, unit, store, page_number, brand, category, protein_type
             FROM bogo_deal 
-            WHERE name LIKE ? {$storeClause} {$catClause} {$protClause}
+            WHERE {$matchClause} {$storeClause} {$catClause} {$protClause}
             ORDER BY name ASC
         ";
 
-        $params[] = $searchParam;
-        if (!empty($storeParams)) { $params = array_merge($params, $storeParams); }
-        if (!empty($catParams))   { $params = array_merge($params, $catParams); }
-        if (!empty($protParams))  { $params = array_merge($params, $protParams); }
+        if (!empty($query)) { $params[] = $searchParam; }
+        $params = array_merge($params, $storeParams, $catParams, $protParams);
 
     } else {
         http_response_code(400);
-        echo json_encode(['error' => "Invalid deal type specified: $dealType"]);
+        echo json_encode(['error' => "Invalid deal type: $dealType"]);
         exit();
     }
 
@@ -143,7 +158,7 @@ try {
 
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['error' => 'Search failed: ' . $e->getMessage()]);
+    echo json_encode(['error' => 'Query failed: ' . $e->getMessage()]);
 } finally {
     $conn = null;
 }

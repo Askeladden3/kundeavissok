@@ -52,13 +52,15 @@ def create_frontend_files(UKE: int, Alle_butikker, nedlastede_butikker):
 
 
 def updateWebsite(UKE):
-    hostname = "login.stud.ntnu.no"
+    hostname = os.environ['FTP_HOST']
     port = 22
-    username = "askhf"
-    password = os.environ['PASSWORD']
+    username = os.environ['FTP_USER']
+    password = os.environ['DB_PASS']
+    remote_basedir = os.environ['FTP_REMOTE_BASEDIR']
+    
 
-    local_files = [f"temp_output/databaser/kundeavis_{UKE}.db", "temp_output/index.html", "temp_output/search.php"]
-    remote_paths = [f"/web/folk/{username}/databaser/kundeavis_{UKE}.db", f"/web/folk/{username}/index.html", f"/web/folk/{username}/search.php"]
+    local_files = ["temp_output/index.html", "temp_output/search.php"]
+    remote_paths = [f"{remote_basedir}/index.html", f"{remote_basedir}/search.php"]
     
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
