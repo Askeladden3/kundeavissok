@@ -61,6 +61,7 @@ def JSONtoSQlite(dato, cfg):
             json_file = entry.path
             data = pd.read_json(json_file)
             table_name = entry.name.split('.')[0]
+            deal_type = table_name
 
             if cfg['test_mode']:
                 table_name = 'TEST' + table_name
@@ -79,7 +80,7 @@ def JSONtoSQlite(dato, cfg):
                     con=engine,
                     index=False,
                     if_exists='replace',
-                    dtype=db_types[table_name])
+                    dtype=db_types[deal_type])
             
             with engine.connect() as conn:
                 conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN id INT AUTO_INCREMENT PRIMARY KEY FIRST;"))

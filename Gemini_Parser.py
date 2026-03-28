@@ -169,12 +169,13 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
                     print(f'\nDeals successfully extracted from batch nr. {batch_n} ({flyer_batch[0].store} | {flyer_batch[-1].store})')
                     return batch_deal_df
 
-                except Exception as e:
-                    print(f"  API request failed (attempt {attempt + 1}/{max_retries}): {e}")
                 except exceptions.ResourceExhausted:
                         model.is_exhausted = True
                         print(f"Error 429 motatt. Slutter nå å bruke {model.name}.")
                         return None
+                except Exception as e:
+                    print(f"  API request failed (attempt {attempt + 1}/{max_retries}): {e}")
+
 
 
                 if attempt < max_retries - 1:
