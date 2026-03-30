@@ -65,7 +65,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
     all_deals = {'standard_deal': [], 'percentage_deal': []}
 
     current_date, år, UKE = DATO
-    API_KEY = os.getenv("GEMINI_API_KEY")
+    API_KEY = os.environ["GEMINI_API_KEY"]
 
 
     max_retries = 3
