@@ -164,7 +164,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
                     
                     #LLM formaterer alle deals inn i en key "flyers", så må hente faktisk respons fra den keyen her
                     batch_deal_df = pd.DataFrame(json.loads(response.text)['flyers'])
-                    if batch_deal_df.empty:
+                    if not batch_deal_df.empty:
                         batch_deal_df = batch_deal_df.rename(columns={"image_index":"page_number"})
                     print(f'\nDeals successfully extracted from batch nr. {batch_n} ({flyer_batch[0].store} | {flyer_batch[-1].store})')
                     return batch_deal_df

@@ -49,11 +49,11 @@ def JSONtoSQlite(dato, cfg):
 
 
     unique_stores = set()
-    USER = os.getenv('DB_USER')
-    PASSWORD = os.getenv('DB_PASS')
-    HOST = os.getenv('DB_HOST')
+    USER = os.environ['DB_USER']
+    PASSWORD = os.environ['DB_PASS']
+    HOST = os.environ['DB_HOST']
     PORT = '3306'
-    DATABASE = os.getenv('DB_NAME')
+    DATABASE = os.environ['DB_NAME']
     engine = create_engine(f"mysql+pymysql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}")
 
     for entry in os.scandir(JSON_dirpath):
