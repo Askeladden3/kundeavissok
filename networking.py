@@ -28,11 +28,6 @@ def create_frontend_files(UKE: int, Alle_butikker, nedlastede_butikker):
         'utilgjengelige_butikker': util_butikkstr
     }
     
-    data_php = {
-        'search_uke': UKE
-    }
-
-
     file_loader = FileSystemLoader('frontend_templates')
 
     env_html = Environment(loader=file_loader)
@@ -42,15 +37,6 @@ def create_frontend_files(UKE: int, Alle_butikker, nedlastede_butikker):
     with open('temp_output/index.html', 'w', encoding='utf-8') as f:
         f.write(output_html)
     
-
-    env_php = Environment(loader=file_loader)
-    php_template = env_php.get_template('phptemplate.php.j2')
-    output_php = php_template.render(**data_php)
-
-    with open('temp_output/search.php', 'w', encoding='utf-8') as f:
-        f.write(output_php)
-
-
 def updateWebsite(UKE):
     hostname = os.environ['FTP_HOST']
     port = 22
@@ -59,8 +45,8 @@ def updateWebsite(UKE):
     remote_basedir = os.environ['FTP_REMOTE_BASEDIR']
     
 
-    local_files = ["temp_output/index.html", "temp_output/search.php"]
-    remote_paths = [f"{remote_basedir}/index.html", f"{remote_basedir}/search.php"]
+    local_files = ["temp_output/index.html"]
+    remote_paths = ["/index.html"]
     
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -68,7 +54,7 @@ def updateWebsite(UKE):
 
     sftp = ssh.open_sftp()
     for index in range(len(local_files)):
-        sftp.put(local_files[index], remote_paths[index])
+        sftp.put(local_files[index], remote_basedir + remote_paths[index])
     sftp.close()
     ssh.close()
 
