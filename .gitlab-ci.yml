@@ -18,7 +18,6 @@ weekly_job:
     - python -m pip install -r requirements.txt
     
     # 4. Run the actual script
-    - set
     - echo "Running weekly job on Windows Shell..."
     - python main.py
   only:
