@@ -166,6 +166,10 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
                     batch_deal_df = pd.DataFrame(json.loads(response.text)['flyers'])
                     if not batch_deal_df.empty:
                         batch_deal_df = batch_deal_df.rename(columns={"image_index":"page_number"})
+                        try:
+                            batch_deal_df[batch_deal_df['category'] == 'eggs']['unit'] = 'stk'
+                        except:
+                            pass
                     print(f'\nDeals successfully extracted from batch nr. {batch_n} ({flyer_batch[0].store} | {flyer_batch[-1].store})')
                     return batch_deal_df
 
