@@ -35,7 +35,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
         image_index : int = Field(description="Index of image item is from. Always provided in prompt.")
         name: str = Field(description="Product name. Do not include amount or numbers here.")
         total_mass: Optional[float] = Field(default=None, description='Total weight/volume')
-        unit: Optional[str] = Field(default=None, description='"kg", "g" or "l"')
+        unit: Optional[str] = Field(default=None, description='"stk", "kg", "g", "ml" or "l"')
         store: str = Field(description="Store that sells the items in image. Always provided in prompt.")
         brand : Optional[str] = Field(default=None, description= "If there is an identifiable brand connected to this item write it here. Otherwise, leave null.")
         category: Category = Field(description="Categorize the item based on its visual appearance and name.")
@@ -167,7 +167,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
                     if not batch_deal_df.empty:
                         batch_deal_df = batch_deal_df.rename(columns={"image_index":"page_number"})
                         try:
-                            batch_deal_df[batch_deal_df['category'] == 'eggs']['unit'] = 'stk'
+                            batch_deal_df.loc(batch_deal_df['category'] == 'eggs', 'unit') = 'stk'
                         except:
                             pass
                     print(f'\nDeals successfully extracted from batch nr. {batch_n} ({flyer_batch[0].store} | {flyer_batch[-1].store})')
