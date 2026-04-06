@@ -6,6 +6,8 @@ weekly_job:
   # Optional: Use tags to ensure this only runs on your specific shell runner
   # tags:
   #   - windows-shell 
+  variables:
+    PYTHONUNBUFFERED: "1"
   script:
     # 1. Create venv if it doesn't exist (PowerShell syntax)
     - if (!(Test-Path venv)) { python -m venv venv }
