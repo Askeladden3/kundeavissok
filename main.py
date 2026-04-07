@@ -52,4 +52,4 @@ def main(params):
 with open('config.yaml', 'r') as fil:
     cfg = yaml.safe_load(fil)
 
-main(cfg[os.environ['cfg_type']])
+main(cfg['custom'])

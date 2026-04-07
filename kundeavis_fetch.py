@@ -232,6 +232,15 @@ def fetch_etilbudsavis(BUTIKKER, dato):
     for helgetilbud in BUTIKKER:
         try:
             driver = webdriver.Chrome(service=service, options=options)
+            driver.get("https://etilbudsavis.no")
+
+            driver.add_cookie({
+                'name': 'eta-location',
+                'value': r'%7B%22latitude%22%3A63.4306%2C%22longitude%22%3A10.4037%2C%22geohash%22%3A%22u5r2uep%22%2C%22city%22%3A%22Trondheim%22%2C%22country%22%3A%22NO%22%2C%22mode%22%3A%22fallback%22%7D',
+                'domain': '.etilbudsavis.no', 
+                'path': '/',
+            })
+
             url = f"https://www.etilbudsavis.no/{HELGETILBUDAVISER[helgetilbud]}" 
             driver.get(url)
             time.sleep(3)
