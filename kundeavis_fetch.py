@@ -255,7 +255,11 @@ def fetch_etilbudsavis(BUTIKKER, dato):
                     name = item.get("name")
                     url = item.get("url")
 
-                    if any(word in name.lower() for word in label_keywords):
+
+                    if helgetilbud in ['coop-prix', 'extra']:
+                        if not name:
+                            all_publication_urls.append(url)
+                    elif any(word in name.lower() for word in label_keywords):
                         all_publication_urls.append(url)
             
             else:
@@ -334,5 +338,7 @@ if __name__ == '__main__':
     år = current_date.year
     uke = current_date.date().isocalendar()[1]
     dato = [current_date, år, uke]
+    BUTIKKER = ['extra','coop-prix']
 
-    URLs = fetch_etilbudsavis(dato)
+    URLs = fetch_etilbudsavis(BUTIKKER, dato)
+    print(URLs)
