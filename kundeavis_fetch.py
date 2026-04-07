@@ -216,7 +216,7 @@ def fetch_kundeavis_mattilbud(dato):
 def fetch_etilbudsavis(BUTIKKER, dato):
 
    # HELGETILBUDAVISER = {'Bunnpris':'bunnpris', 'REMA-1000':'rema-1000', 'Coop-Mega':'coop-mega', 'Coop-Prix':'coop-prix', 'Extra':'extra', 'KIWI':'kiwi', 'MENY':'meny', 'Obs':'obs', 'Joker':'joker', 'SPAR':'spar'}
-    HELGETILBUDAVISER = {'bunnpris':'Bunnpris', 'rema-1000':'REMA-1000', 'coop-mega':'Coop-Mega', 'coop-prix':'Coop-Prix', 'extra':'Extra', 'kiwi':'KIWI', 'meny':'MENY', 'obs':'Obs', 'joker':'Joker', 'spar':'SPAR'}
+    HELGETILBUDAVISER = {'bunnpris':'Bunnpris', 'rema-1000':'REMA-1000', 'coop-mega':'Coop-Mega', 'coop-prix':'Coop-Prix', 'extra':'Extra', 'kiwi':'KIWI', 'meny':'MENY', 'obs':'Obs', 'joker':'Joker', 'spar':'SPAR', 'coop-marked': 'coop marked'}
 
 
     curr_date, år, uke = dato
@@ -229,47 +229,54 @@ def fetch_etilbudsavis(BUTIKKER, dato):
     options.add_argument("--headless")
 
 
-    for idx, helgetilbud in enumerate(BUTIKKER):
+    for helgetilbud in BUTIKKER:
         try:
             driver = webdriver.Chrome(service=service, options=options)
             url = f"https://www.etilbudsavis.no/{HELGETILBUDAVISER[helgetilbud]}" 
             driver.get(url)
-            time.sleep(1) 
-        
+            time.sleep(3)
+
 
             html_source = driver.page_source
             soup = BeautifulSoup(html_source, 'html.parser')
-            child_element = soup.find(string=re.compile(r"uke\s*\d+", re.IGNORECASE))
-            if child_element is None:
-                print('Første regex funket ikke. Prøver regex="kundeavis".')
-                child_element = soup.find("script", string=re.compile(r"kundeavis", re.IGNORECASE))
-        
-            if child_element is None:
-                print('Andre regex funket ikke. Prøver regex="Coop Mega".')
-                child_element = soup.find("script", string=re.compile(r"Coop Mega", re.IGNORECASE))
-
-            #Pga programmeringsstrukturen til etilbudsavis blir bilder lagret som del av json-pakke, så denne koden gjør om til json og henter ut url-delen
-            child_element_json = json.loads(child_element.string)
-            for entry in child_element_json.get('@graph', []):
-                if entry.get('@type') == 'ItemList':
-                    butikk_avis_url = entry['itemListElement'][0]['item']['url']
-            final_url = butikk_avis_url
-
-
-
-            driver.get(final_url)
-            time.sleep(1)
-            html = driver.page_source
-            soup = BeautifulSoup(html, 'html.parser')
-            page_divs = soup.find_all('div', attrs={"data-page-number": True})
+            all_publication_urls = []
             final_img_links = []
+            label_keywords = ["uke", "kundeavis", "coop mega", "obs", 'coop marked']
 
+            script_tag = soup.find("script", type="application/ld+json")
 
-            #Finner bildene i divsa. bruker spesifikt data-src-lg (large) fordi best kvalitet på bilder.
-            for div in page_divs:
-                img_tag = div.find('img')
-                if img_tag and img_tag.get("data-src-lg"):
-                    final_img_links.append(img_tag.get("data-src-lg"))
+            if script_tag:
+                json_data = json.loads(script_tag.string)
+                graph = json_data.get("@graph", [])
+                item_list = next((obj for obj in graph if obj.get("@type") == "ItemList"), None)
+                publications = item_list.get("itemListElement", [])
+                for pub in publications:
+                    item = pub.get("item", {})
+                    name = item.get("name")
+                    url = item.get("url")
+
+                    if any(word in name.lower() for word in label_keywords):
+                        all_publication_urls.append(url)
+            
+            else:
+                print(f'ERROR: No valid publication URLs for {helgetilbud}. Skipping.')
+                failed_stores.append(helgetilbud)
+                continue
+
+            for pub_url in all_publication_urls:
+                driver.get(pub_url)
+                time.sleep(2)
+                html = driver.page_source
+                soup = BeautifulSoup(html, 'html.parser')
+                page_divs = soup.find_all('div', attrs={"data-page-number": True})
+                final_img_links = []
+
+                #Finner bildene i divsa. bruker spesifikt data-src-lg (large) fordi best kvalitet på bilder.
+                for div in page_divs:
+                    img_tag = div.find('img')
+                    if img_tag and img_tag.get("data-src-lg"):
+                        final_img_links.append(img_tag.get("data-src-lg"))
+
         except Exception as e:
             print(f"An error occurred: {e}")
             failed_stores.append(helgetilbud)

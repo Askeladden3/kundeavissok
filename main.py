@@ -29,7 +29,7 @@ def main(params):
 
 
     if params['download_kundeaviser']:
-        avisurls = fetch_kundeavis(BUTIKKER, dato)
+        avisurls = fetch_etilbudsavis(BUTIKKER, dato)
         if avisurls:
             download_kundeaviser(dato, avisurls)
 
