@@ -254,13 +254,11 @@ def fetch_etilbudsavis(BUTIKKER, dato):
 
             script_tag = soup.find("script", type="application/ld+json")
 
-            print("DEBUG - SCRIPT TAG:", script_tag, '\n\n')
 
             if script_tag:
                 json_data = json.loads(script_tag.string)
                 graph = json_data.get("@graph", [])
 
-                print("DEUG - GRAPH: ", graph, '\n\n')
                 item_list = next((obj for obj in graph if obj.get("@type") == "ItemList"), None)
                 publications = item_list.get("itemListElement", [])
                 for pub in publications:
