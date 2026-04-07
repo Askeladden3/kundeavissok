@@ -1,16 +1,11 @@
 import os
-import json
-import base64
-import time
 from datetime import datetime
-import sqlite3
 import pandas as pd
 from sqlalchemy import create_engine, Integer, String, Float, text
 
 
-def JSONtoSQlite(dato, cfg):
+def JSONtoSQlite(cfg):
 
-    curr_date, år, UKE = dato
 
     default_column_types = {
     'name': String(355),
@@ -79,7 +74,7 @@ def JSONtoSQlite(dato, cfg):
             data.to_sql(name=table_name,
                     con=engine,
                     index=False,
-                    if_exists='replace',
+                    if_exists= 'append' if cfg['append_SQL'] else 'replace',
                     dtype=db_types[deal_type])
             
             with engine.connect() as conn:

@@ -338,7 +338,7 @@ if __name__ == '__main__':
     år = current_date.year
     uke = current_date.date().isocalendar()[1]
     dato = [current_date, år, uke]
-    BUTIKKER = ['extra','coop-prix']
+    BUTIKKER = ['bunnpris', 'coop-mega']
 
     URLs = fetch_etilbudsavis(BUTIKKER, dato)
-    print(URLs)
+    download_kundeaviser(dato, URLs)
