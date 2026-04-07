@@ -282,7 +282,7 @@ def fetch_etilbudsavis(BUTIKKER, dato):
             failed_stores.append(helgetilbud)
         
         else:
-            kundeavisen[HELGETILBUDAVISER[helgetilbud]] = final_img_links
+            kundeavisen[helgetilbud] = final_img_links
             print(f"Successfully extracted kundeavis from {HELGETILBUDAVISER[helgetilbud]}")
 
         finally:
