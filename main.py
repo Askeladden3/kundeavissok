@@ -1,7 +1,7 @@
 
 from Gemini_Parser import Gemini_parser
 from fromJSONtoSQlite import JSONtoSQlite
-from kundeavis_fetch import fetch_kundeavis, download_kundeaviser, fetch_etilbudsavis
+from kundeavis_fetch import download_kundeaviser, fetch_etilbudsavis
 import datetime
 from networking import updateWebsite, create_frontend_files, updateWebsite_testing, zip_and_saveFiles
 import yaml
@@ -42,7 +42,7 @@ def main(params):
     if params['test_mode']:
         updateWebsite_testing(uke)
     elif params['updateWebsite']:
-        updateWebsite(uke)
+        updateWebsite()
     if params['saveFiles']:
         zip_and_saveFiles(dato)
 
@@ -52,4 +52,4 @@ def main(params):
 with open('config.yaml', 'r') as fil:
     cfg = yaml.safe_load(fil)
 
-main(cfg['custom'])
+main(cfg[os.environ['cfg_type']])

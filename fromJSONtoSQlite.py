@@ -78,10 +78,11 @@ def JSONtoSQlite(cfg):
                     if_exists= 'append' if cfg['append_SQL'] else 'replace',
                     dtype=db_types[deal_type])
             
-            with engine.connect() as conn:
-                conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN id INT AUTO_INCREMENT PRIMARY KEY FIRST;"))
-                conn.execute(text(f"ALTER TABLE {table_name} ADD FULLTEXT(name);"))
-                conn.commit()
+            if not cfg['append_SQL']:
+                with engine.connect() as conn:
+                    conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN id INT AUTO_INCREMENT PRIMARY KEY FIRST;"))
+                    conn.execute(text(f"ALTER TABLE {table_name} ADD FULLTEXT(name);"))
+                    conn.commit()
             
             stores = set(data['store'])
             unique_stores = unique_stores.union(stores)

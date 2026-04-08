@@ -37,7 +37,7 @@ def create_frontend_files(UKE: int, Alle_butikker, nedlastede_butikker):
     with open('temp_output/index.html', 'w', encoding='utf-8') as f:
         f.write(output_html)
     
-def updateWebsite(UKE):
+def updateWebsite():
     hostname = os.environ['FTP_HOST']
     port = 22
     username = os.environ['FTP_USER']
