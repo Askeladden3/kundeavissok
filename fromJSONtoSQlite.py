@@ -68,7 +68,8 @@ def JSONtoSQlite(cfg):
                     continue
 
             data.drop(columns=['deal_type'], inplace=True)
-            data['protein_type'] = data['protein_type'].map(protein_dict)
+            if 'protein_type' in data.columns:
+                data['protein_type'] = data['protein_type'].map(protein_dict)
 
 
             data.to_sql(name=table_name,

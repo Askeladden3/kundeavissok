@@ -326,8 +326,11 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
                     df.drop(columns=['name_lowercase'], inplace=True)
 
                     where_gram = df['unit'] == 'g'
+                    where_ml = df['unit'] == 'ml'
                     df.loc[where_gram, 'total_mass'] = df.loc[where_gram, 'total_mass'].apply(lambda x: x/1000)
+                    df.loc[where_ml, 'total_mass'] = df.loc[where_ml, 'total_mass'].apply(lambda x: x/1000)
                     df.loc[where_gram, 'unit'] = 'kg'
+                    df.loc[where_ml, 'unit'] = 'L'
 
                     save_to_json(df.dropna(axis=1, how='all'), f"{JSON_OUTPUT_FOLDER}/{category_key}.json")
 
