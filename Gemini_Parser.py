@@ -313,7 +313,7 @@ def Gemini_parser(BUTIKKER, add_website_json=False, add_tmp_json=False, batchsiz
         print(f"{n_images} bilder skal behandles.")
 
 
-        model = AI_models[0]
+        model = AI_models[1]
 
 
         if batchsize is None:
