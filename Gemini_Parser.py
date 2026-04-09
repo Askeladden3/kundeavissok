@@ -27,15 +27,23 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
         BAKERY = "bakery"
         SEAFOOD = "seafood"
         SNACKS_CANDY = "snacks_candy"
+        PIZZA = "pizza"
         SODA = "soda"
         PRODUCE = "produce"
         OTHER = "other"
+
+    class Unit(str, Enum):
+        STK = "stk"
+        ML = "ml"
+        L = "L"
+        G = "g"
+        KG = "kg"
 
     class base_deal(BaseModel):
         image_index : int = Field(description="Index of image item is from. Always provided in prompt.")
         name: str = Field(description="Product name. Do not include amount or numbers here.")
         total_mass: Optional[float] = Field(default=None, description='Total weight/volume')
-        unit: Optional[str] = Field(default=None, description='"stk", "kg", "g", "ml" or "l"')
+        unit: Optional[Unit] = Field(default=None, description='"stk", "kg", "g", "ml" or "l"')
         store: str = Field(description="Store that sells the items in image. Always provided in prompt.")
         brand : Optional[str] = Field(default=None, description= "If there is an identifiable brand connected to this item write it here. Otherwise, leave null.")
         category: Category = Field(description="Categorize the item based on its visual appearance and name.")
