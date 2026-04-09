@@ -49,12 +49,12 @@ def JSONtoSQlite(cfg):
     HOST = os.environ['DB_HOST']
     PORT = '3306'
     DATABASE = os.environ['DB_NAME']
-    engine = create_engine(f"mysql+pymysql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}")
+    engine = create_engine(f"mysql+pymysql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}?charset=utf8mb4")
 
     for entry in os.scandir(JSON_dirpath):
         if entry.is_file():
             json_file = entry.path
-            data = pd.read_json(json_file)
+            data = pd.read_json(json_file, encoding='utf-8')
             table_name = entry.name.split('.')[0]
             deal_type = table_name
 
