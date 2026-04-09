@@ -11,7 +11,6 @@ def create_frontend_files(UKE: int, Alle_butikker, nedlastede_butikker):
                      'joker': 'Joker','spar': 'Eurospar','coop-mega': 'Coop Mega',
                      'coop-marked': 'Coop Marked','obs': 'Coop Obs'}
 
-    folder_path = "temp_output/bilder/"
 
     utilgjengelige_butikker = set(Alle_butikker).difference(nedlastede_butikker)
 

@@ -7,6 +7,7 @@ standard:
   prev_failed_batches:  #Liste med failed batches som skal reprosseseres (Ikke idx, men batch_nr (altså hvis 1. batch feilet, så skriv 1 og ikke 0 i listen))
   append_SQL: false #Whether to append new entries to existing SQL table or replace them
   add_website_JSON: false
+  add_tmp_json: false
   saveFiles: true
   updateWebsite: true
 
@@ -19,5 +20,6 @@ custom:
   prev_failed_batches:  #Liste med failed batches som skal reprosseseres (Ikke idx, men batch_nr (altså hvis 1. batch feilet, så skriv 1 og ikke 0 i listen))
   append_SQL: true #Whether to append new entries to existing SQL table or replace them
   add_website_JSON: false
+  add_tmp_json: true
   saveFiles: false
   updateWebsite: false

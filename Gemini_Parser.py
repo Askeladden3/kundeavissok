@@ -1,6 +1,5 @@
 import os
 import json
-import base64
 import time
 import requests
 import sys
@@ -9,15 +8,15 @@ import numpy as np
 import math
 import pandas as pd
 from google import genai
-from google.api_core import exceptions
+from google.genai import errors
 from pydantic import BaseModel, Field
 from typing import List, Optional, Union, Literal
 from PIL import Image
 from enum import Enum
 
 
-def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_failed_batches=None):
-    '''Sender API-calls for å ekstrahere matvarer fra kundeavisene'''
+def Gemini_parser(BUTIKKER, add_website_json=False, add_tmp_json=False, batchsize=None, prev_failed_batches=None):
+    '''Sends API calls to extract food items from grocery flyers'''
 
     class Category(str, Enum):
         MEAT = "meat"
@@ -70,9 +69,8 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
     class FlyerBatch(BaseModel):
         flyers: List[Union[standard_deal, percentage_deal, bogo_deal]]
 
-    all_deals = {'standard_deal': [], 'percentage_deal': []}
+    all_deals = ['standard_deal', 'percentage_deal', 'bogo_deal']
 
-    current_date, år, UKE = DATO
     API_KEY = os.environ["GEMINI_API_KEY"]
 
 
@@ -181,12 +179,17 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
                     print(f'\nDeals successfully extracted from batch nr. {batch_n} ({flyer_batch[0].store} | {flyer_batch[-1].store})')
                     return batch_deal_df
 
-                except exceptions.ResourceExhausted:
-                        model.is_exhausted = True
-                        print(f"Error 429 motatt. Slutter nå å bruke {model.name}.")
-                        return None
+                except errors.APIError as e:
+                        if e.code == 429:   
+                            model.is_exhausted = True
+                            print(f"Error 429 recieved. Now stopping the use of {model.name}.")
+                            return None
+                        else: 
+                            print(f"  API request failed (attempt {attempt + 1}/{max_retries}): {e}")
+                            attempt += 1
                 except Exception as e:
                     print(f"  API request failed (attempt {attempt + 1}/{max_retries}): {e}")
+                    attempt += 1
 
 
 
@@ -198,7 +201,7 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
                 
                     attempt += 1
                 if errorFlag:
-                    print(f'\n\n Batch nr {batch_n} av {n_batches} har ikke blitt behandlet. Går videre til neste batch.\n\n')
+                    print(f'\n\n Batch nr {batch_n} of {n_batches} has not been processed. Moving on to next batch.\n\n')
                     failed_batches[(batchidx, n_batches)] = flyer_batch
                     return None
                 
@@ -225,7 +228,12 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
                 return f"({self.store}-{self.page_number})"
         
 
-        if add_tmp_json:
+        ALL_DEALS_DF = None
+        if add_website_json:
+
+            if os.scandir(JSON_OUTPUT_FOLDER):
+                print("Cannot add website JSON to json_output_folder as there are already files there")
+                sys.exit()
 
             json_url = "https://askhf.folk.ntnu.no/temp_JSON/"
 
@@ -241,12 +249,26 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
                     with open(f'{JSON_OUTPUT_FOLDER}/{href}', "wb") as f:
                         f.write(r.content)
 
-            for category in all_deals.keys():
-                with open(f'{JSON_OUTPUT_FOLDER}/{category}.json', 'r', encoding='utf-8') as f:
-                    all_deals[category] = json.load(f)
 
-            print(f"Antall entries i price_deals er {len(all_deals['price_deals'])}. Ser det rett ut? \n\n")
+        
+        if add_tmp_json or add_website_json:
+            if not os.path.exists(JSON_OUTPUT_FOLDER):
+                print("Program is set to add json already in JSON folder, but folder doesnt exist")
+                sys.exit()
+            elif os.listdir(JSON_OUTPUT_FOLDER):
+                print("Program is set to add json already in JSON folder, but folder has no files!")
+                sys.exit()
+
+            tmp_df_list = []
+            for category in all_deals:
+                data = pd.read_json(f'{JSON_OUTPUT_FOLDER}/{category}.json', encoding='utf-8')
+                data['deal_type'] = category
+                tmp_df_list.append(data)
+
+            ALL_DEALS_DF = pd.concat(tmp_df_list, ignore_index=True)
+            print(f"Number of items before start of parsing is {len(ALL_DEALS_DF)}. Does it seem correct? \n\n")
             time.sleep(5)
+
 
         
         if not os.path.exists(IMAGE_INPUT_FOLDER):
@@ -298,49 +320,47 @@ def Gemini_parser(BUTIKKER, DATO, add_tmp_json=False, batchsize=None, prev_faile
             batchsize = math.ceil(len(full_flyer_list)/(RPD_tol*model.rate_limit))
 
 
-    
-        if batchsize >= 1:
-            ALL_DEALS_DF = None
-            n_batches = math.ceil(len(full_flyer_list)/batchsize)
-            print(f'Number of batches to be processed: {n_batches}\n')
-            batched_flyer_list = np.array_split(full_flyer_list, n_batches)
-            for idx, flyer_batch in enumerate(batched_flyer_list):
-                if prev_failed_batches and idx + 1 not in prev_failed_batches:
-                    continue
-                deals_df = analyze_flyer_batch(flyer_batch, model, batchidx=idx, n_batches = n_batches)
-                if model.is_exhausted:
-                    model_idx = AI_models.index(model)
-                    if model_idx == len(AI_models)-1:
-                        print('Alle AI-modeller brukt opp. Må stoppe prosessen her.')
-                        remaining_batches = full_flyer_list[idx+1:]
-                        failed_batches.extend(remaining_batches)
-                        break
-                    else:
-                        model = AI_models[model_idx+1]
-                        deals_df = analyze_flyer_batch(flyer_batch, model, batchidx=idx, n_batches = n_batches)
-
-                if not deals_df.empty:
-                    deals_df['AI_model_used'] = model.id
-                if ALL_DEALS_DF is None:
-                    ALL_DEALS_DF = deals_df
+        n_batches = math.ceil(len(full_flyer_list)/batchsize)
+        print(f'Number of batches to be processed: {n_batches}\n')
+        batched_flyer_list = np.array_split(full_flyer_list, n_batches)
+        for idx, flyer_batch in enumerate(batched_flyer_list):
+            if prev_failed_batches and idx + 1 not in prev_failed_batches:
+                continue
+            deals_df = analyze_flyer_batch(flyer_batch, model, batchidx=idx, n_batches = n_batches)
+            if model.is_exhausted:
+                model_idx = AI_models.index(model)
+                if model_idx == len(AI_models)-1:
+                    print('Alle AI-modeller brukt opp. Må stoppe prosessen her.')
+                    remaining_batches = full_flyer_list[idx+1:]
+                    failed_batches.extend(remaining_batches)
+                    break
                 else:
-                    ALL_DEALS_DF = pd.concat([ALL_DEALS_DF, deals_df], ignore_index=True)
-                grouped_dfs = {key : group for key, group in ALL_DEALS_DF.groupby('deal_type')}
-                print("  Saving current progress to files...")
-                for category_key, df in grouped_dfs.items():
-                    #Fjerner duplikatvarer fra samme butikk
-                    df['name_lowercase'] = df['name'].str.lower()
-                    df.drop_duplicates(subset=['store', 'name_lowercase'], keep='first', ignore_index=True, inplace = True)
-                    df.drop(columns=['name_lowercase'], inplace=True)
+                    model = AI_models[model_idx+1]
+                    print(f"Switched to model: {model.name}")
+                    deals_df = analyze_flyer_batch(flyer_batch, model, batchidx=idx, n_batches = n_batches)
 
-                    where_gram = df['unit'] == 'g'
-                    where_ml = df['unit'] == 'ml'
-                    df.loc[where_gram, 'total_mass'] = df.loc[where_gram, 'total_mass'].apply(lambda x: x/1000)
-                    df.loc[where_ml, 'total_mass'] = df.loc[where_ml, 'total_mass'].apply(lambda x: x/1000)
-                    df.loc[where_gram, 'unit'] = 'kg'
-                    df.loc[where_ml, 'unit'] = 'L'
+            if not deals_df.empty:
+                deals_df['AI_model_used'] = model.id
+            if ALL_DEALS_DF is None:
+                ALL_DEALS_DF = deals_df
+            else:
+                ALL_DEALS_DF = pd.concat([ALL_DEALS_DF, deals_df], ignore_index=True)
+            grouped_dfs = {key : group for key, group in ALL_DEALS_DF.groupby('deal_type')}
+            print("  Saving current progress to files...")
+            for category_key, df in grouped_dfs.items():
+                #Fjerner duplikatvarer fra samme butikk
+                df['name_lowercase'] = df['name'].str.lower()
+                df.drop_duplicates(subset=['store', 'name_lowercase'], keep='first', ignore_index=True, inplace = True)
+                df.drop(columns=['name_lowercase'], inplace=True)
 
-                    save_to_json(df.dropna(axis=1, how='all'), f"{JSON_OUTPUT_FOLDER}/{category_key}.json")
+                where_gram = df['unit'] == 'g'
+                where_ml = df['unit'] == 'ml'
+                df.loc[where_gram, 'total_mass'] = df.loc[where_gram, 'total_mass'].apply(lambda x: x/1000)
+                df.loc[where_ml, 'total_mass'] = df.loc[where_ml, 'total_mass'].apply(lambda x: x/1000)
+                df.loc[where_gram, 'unit'] = 'kg'
+                df.loc[where_ml, 'unit'] = 'L'
+
+                save_to_json(df.dropna(axis=1, how='all'), f"{JSON_OUTPUT_FOLDER}/{category_key}.json")
 
 
 

@@ -8,7 +8,6 @@ webdriver-manager
 google-genai
 PyYAML
 pandas
-google-api-core
 Pillow
 pymysql
 sqlalchemy
