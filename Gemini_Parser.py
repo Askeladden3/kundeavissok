@@ -227,11 +227,14 @@ def Gemini_parser(BUTIKKER, add_website_json=False, add_tmp_json=False, batchsiz
             def __repr__(self):
                 return f"({self.store}-{self.page_number})"
         
+        def is_dir_empty(path):
+            with os.scandir(path) as it:
+                return not any(it)
 
         ALL_DEALS_DF = None
         if add_website_json:
 
-            if os.scandir(JSON_OUTPUT_FOLDER):
+            if not is_dir_empty(JSON_OUTPUT_FOLDER):
                 print("Cannot add website JSON to json_output_folder as there are already files there")
                 sys.exit()
 
