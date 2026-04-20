@@ -253,10 +253,10 @@ def Gemini_parser(BUTIKKER, add_website_json=False, add_tmp_json=False, batchsiz
         
         if add_tmp_json or add_website_json:
             if not os.path.exists(JSON_OUTPUT_FOLDER):
-                print("Program is set to add json already in JSON folder, but folder doesnt exist")
+                print("Program is set to append json already present in JSON folder, but folder doesnt exist")
                 sys.exit()
             elif os.listdir(JSON_OUTPUT_FOLDER):
-                print("Program is set to add json already in JSON folder, but folder has no files!")
+                print("Program is set to add json already present in JSON folder, but folder has no files!")
                 sys.exit()
 
             tmp_df_list = []
@@ -339,6 +339,8 @@ def Gemini_parser(BUTIKKER, add_website_json=False, add_tmp_json=False, batchsiz
                     print(f"Switched to model: {model.name}")
                     deals_df = analyze_flyer_batch(flyer_batch, model, batchidx=idx, n_batches = n_batches)
 
+            if deals_df is None:
+                deals_df = pd.DataFrame([])
             if not deals_df.empty:
                 deals_df['AI_model_used'] = model.id
             if ALL_DEALS_DF is None:
