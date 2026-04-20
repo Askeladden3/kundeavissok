@@ -258,7 +258,7 @@ def Gemini_parser(BUTIKKER, add_website_json=False, add_tmp_json=False, batchsiz
             if not os.path.exists(JSON_OUTPUT_FOLDER):
                 print("Program is set to append json already present in JSON folder, but folder doesnt exist")
                 sys.exit()
-            elif os.listdir(JSON_OUTPUT_FOLDER):
+            elif is_dir_empty(JSON_OUTPUT_FOLDER):
                 print("Program is set to add json already present in JSON folder, but folder has no files!")
                 sys.exit()
 
