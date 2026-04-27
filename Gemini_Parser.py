@@ -13,61 +13,12 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Union, Literal
 from PIL import Image
 from enum import Enum
+import schemas
 
 
 def Gemini_parser(BUTIKKER, add_website_json=False, add_tmp_json=False, batchsize=None, prev_failed_batches=None):
     '''Sends API calls to extract food items from grocery flyers'''
 
-    class Category(str, Enum):
-        MEAT = "meat"
-        BREAD_TOPPINGS = "bread_toppings"
-        DAIRY = "dairy"
-        EGGS = "eggs"
-        BAKERY = "bakery"
-        SEAFOOD = "seafood"
-        SNACKS_CANDY = "snacks_candy"
-        PIZZA = "pizza"
-        SODA = "soda"
-        PRODUCE = "produce"
-        OTHER = "other"
-
-    class Unit(str, Enum):
-        STK = "stk"
-        ML = "ml"
-        L = "L"
-        G = "g"
-        KG = "kg"
-
-    class base_deal(BaseModel):
-        image_index : int = Field(description="Index of image item is from. Always provided in prompt.")
-        name: str = Field(description="Product name. Do not include amount or numbers here.")
-        total_mass: Optional[float] = Field(default=None, description='Total weight/volume')
-        unit: Optional[Unit] = Field(default=None, description='"stk", "kg", "g", "ml" or "l"')
-        store: str = Field(description="Store that sells the items in image. Always provided in prompt.")
-        brand : Optional[str] = Field(default=None, description= "If there is an identifiable brand connected to this item write it here. Otherwise, leave null.")
-        category: Category = Field(description="Categorize the item based on its visual appearance and name.")
-        protein_type: Optional[Literal["beef", "pork", "poultry", "lamb", "mixed", "plant_based"]] = Field(
-        default=None, 
-        description="If the item is RAW_MEAT or BREAD_TOPPINGS containing meat, identify the primary protein. Otherwise, leave null.")
-
-
-    class standard_deal(base_deal):
-        deal_type : Literal["standard_deal"] = Field(description = "Fixed label, do not look for this in text.")
-        price_per_unit: float = Field(description='price per kg or liter.')
-        total_price: float = Field(description='Total sale price (decimal)')
-
-    class percentage_deal(base_deal):
-        deal_type : Literal["percentage_deal"] = Field(description = "Fixed label, do not look for this in text.")
-        percentage_off : int = Field(description="Discount percentage")
-
-    class bogo_deal(base_deal):
-        deal_type : Literal["bogo_deal"] = Field(description = "Fixed label, do not look for this in text.")
-        items_received: int = Field(description="Total number of items the customer gets (e.g., 3 in '3 for 2').")
-        items_paid_for: int = Field(description="Number of items the customer actually pays for (e.g., 2 in '3 for 2').")
-
-
-    class FlyerBatch(BaseModel):
-        flyers: List[Union[standard_deal, percentage_deal, bogo_deal]]
 
     all_deals = ['standard_deal', 'percentage_deal', 'bogo_deal']
 
@@ -165,7 +116,7 @@ def Gemini_parser(BUTIKKER, add_website_json=False, add_tmp_json=False, batchsiz
                     model=model.id,
                     contents=[prompt,batch_image_list],
                     config={'response_mime_type':"application/json",
-                            "response_schema": FlyerBatch.model_json_schema()}
+                            "response_schema": schemas.flyer_batch.model_json_schema()}
                     )
                     
                     #LLM formaterer alle deals inn i en key "flyers", så må hente faktisk respons fra den keyen her
