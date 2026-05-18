@@ -267,10 +267,10 @@ def fetch_etilbudsavis(BUTIKKER, dato):
                     url = item.get("url")
 
 
-                    if helgetilbud in ['coop-prix', 'extra']:
+                    if helgetilbud in ['coop-prix', 'extra', 'kiwi']:
                         if not name:
                             all_publication_urls.append(url)
-                    elif any(word in name.lower() for word in label_keywords):
+                    elif any(word in name.lower().split() for word in label_keywords):
                         all_publication_urls.append(url)
             
             else:
