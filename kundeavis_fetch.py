@@ -298,6 +298,7 @@ def fetch_etilbudsavis(BUTIKKER, dato):
         
         else:
             kundeavisen[helgetilbud] = final_img_links
+            print(f'DEBUG: BUTIKK: {helgetilbud} | Link(s): {final_img_links}')
             print(f"Successfully extracted kundeavis from {HELGETILBUDAVISER[helgetilbud]}")
 
         finally:
