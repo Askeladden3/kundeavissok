@@ -1,0 +1,229 @@
+{
+    "header": [
+        2026,
+        22,
+        [
+            "meny",
+            "rema-1000",
+            "kiwi",
+            "extra",
+            "bunnpris",
+            "coop-prix",
+            "joker",
+            "spar",
+            "coop-mega",
+            "coop-marked",
+            "obs"
+        ]
+    ],
+    "meny": [
+        [
+            {
+                "@type": "CreativeWork",
+                "name": "Uke 22",
+                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2FoOOnq21x%2Fp-1.webp&w=250&s=8de81971efd31b39baf5a8b2d9b506a5",
+                "url": "https://etilbudsavis.no/MENY/?publication=oOOnq21x"
+            },
+            "Uke 22",
+            "https://etilbudsavis.no/MENY/?publication=oOOnq21x"
+        ]
+    ],
+    "rema-1000": [
+        [
+            {
+                "@type": "CreativeWork",
+                "name": "Uke 22",
+                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2FyP5E6BwZ%2Fp-1.webp&w=250&s=4dc0438b4954565864630f1965bf2d7b",
+                "url": "https://etilbudsavis.no/REMA-1000/?publication=yP5E6BwZ"
+            },
+            "Uke 22",
+            "https://etilbudsavis.no/REMA-1000/?publication=yP5E6BwZ"
+        ],
+        [
+            {
+                "@type": "CreativeWork",
+                "name": "Matlyst",
+                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2FRnkxTiTP%2Fp-1.webp&w=250&s=3bb8479af5d30a79417d2a5d213d4fb3",
+                "url": "https://etilbudsavis.no/REMA-1000/?publication=RnkxTiTP"
+            },
+            "Matlyst",
+            "https://etilbudsavis.no/REMA-1000/?publication=RnkxTiTP"
+        ]
+    ],
+    "kiwi": [
+        [
+            {
+                "@type": "CreativeWork",
+                "name": "",
+                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2FUQwdLaDI%2Fp-1.webp&w=250&s=567547f27187c61ea789fd61930f410e",
+                "url": "https://etilbudsavis.no/KIWI/?publication=UQwdLaDI"
+            },
+            "",
+            "https://etilbudsavis.no/KIWI/?publication=UQwdLaDI"
+        ]
+    ],
+    "extra": [
+        [
+            {
+                "@type": "CreativeWork",
+                "name": "",
+                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2FRCRMArEo%2Fp-1.webp&w=250&s=f13c9d1d0487e3843520097b1503fde4",
+                "url": "https://etilbudsavis.no/Extra/?publication=RCRMArEo"
+            },
+            "",
+            "https://etilbudsavis.no/Extra/?publication=RCRMArEo"
+        ],
+        [
+            {
+                "@type": "CreativeWork",
+                "name": "Middagsdisken Grill",
+                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2FJv_RxWi9%2Fp-1.webp&w=250&s=5bfb0eb5359bf5aa4a919a349070b168",
+                "url": "https://etilbudsavis.no/Extra/?publication=Jv_RxWi9"
+            },
+            "Middagsdisken Grill",
+            "https://etilbudsavis.no/Extra/?publication=Jv_RxWi9"
+        ],
+        [
+            {
+                "@type": "CreativeWork",
+                "name": "Spinnville tilbud",
+                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2FpAnK-SJg%2Fp-1.webp&w=250&s=826a36b82ad766b59619779b0c320a34",
+                "url": "https://etilbudsavis.no/Extra/?publication=pAnK-SJg"
+            },
+            "Spinnville tilbud",
+            "https://etilbudsavis.no/Extra/?publication=pAnK-SJg"
+        ]
+    ],
+    "bunnpris": [
+        [
+            {
+                "@type": "CreativeWork",
+                "name": "Grillfest hos Bunnpris\ud83d\udd25",
+                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2FuZ72puyw%2Fp-1.webp&w=250&s=ae00694b52af5737fa28248803b33450",
+                "url": "https://etilbudsavis.no/Bunnpris/?publication=uZ72puyw"
+            },
+            "Grillfest hos Bunnpris\ud83d\udd25",
+            "https://etilbudsavis.no/Bunnpris/?publication=uZ72puyw"
+        ],
+        [
+            {
+                "@type": "CreativeWork",
+                "name": "Kundeavis uke 22",
+                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2FXMRccRw_%2Fp-1.webp&w=250&s=2b1c58a6d49393c5d39e39b5049d5bcf",
+                "url": "https://etilbudsavis.no/Bunnpris/?publication=XMRccRw_"
+            },
+            "Kundeavis uke 22",
+            "https://etilbudsavis.no/Bunnpris/?publication=XMRccRw_"
+        ]
+    ],
+    "coop-prix": [
+        [
+            {
+                "@type": "CreativeWork",
+                "name": "",
+                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2Fd_5FKHK3%2Fp-1.webp&w=250&s=1b26ff6b7cf7cd36f8eb32babf8a09cf",
+                "url": "https://etilbudsavis.no/Coop-Prix/?publication=d_5FKHK3"
+            },
+            "",
+            "https://etilbudsavis.no/Coop-Prix/?publication=d_5FKHK3"
+        ]
+    ],
+    "joker": [
+        [
+            {
+                "@type": "CreativeWork",
+                "name": "Joker kundeavis 25.5.\u201330.5.",
+                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2FxpLjqEXi%2Fp-1.webp&w=250&s=be62b53b8c4560c3ea3822c66d2555b9",
+                "url": "https://etilbudsavis.no/Joker/?publication=xpLjqEXi"
+            },
+            "Joker kundeavis 25.5.\u201330.5.",
+            "https://etilbudsavis.no/Joker/?publication=xpLjqEXi"
+        ],
+        [
+            {
+                "@type": "CreativeWork",
+                "name": "Godt til middag mai",
+                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2F9tZK_Ebe%2Fp-1.webp&w=250&s=ddc2ce659a8c7cdd4c68e886784e3e84",
+                "url": "https://etilbudsavis.no/Joker/?publication=9tZK_Ebe"
+            },
+            "Godt til middag mai",
+            "https://etilbudsavis.no/Joker/?publication=9tZK_Ebe"
+        ]
+    ],
+    "spar": [
+        [
+            {
+                "@type": "CreativeWork",
+                "name": "Uke 22 Riks",
+                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2F-Je83Lnd%2Fp-1.webp&w=250&s=30d2d07628afd862f174141c9e97c7d4",
+                "url": "https://etilbudsavis.no/SPAR/?publication=X5mBytsg"
+            },
+            "Uke 22 Riks",
+            "https://etilbudsavis.no/SPAR/?publication=X5mBytsg"
+        ]
+    ],
+    "coop-mega": [
+        [
+            {
+                "@type": "CreativeWork",
+                "name": "Sommermat",
+                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2FBzhe9vZC%2Fp-1.webp&w=250&s=3fbc77a481c81565f49d91108645ab5a",
+                "url": "https://etilbudsavis.no/Coop-Mega/?publication=Bzhe9vZC"
+            },
+            "Sommermat",
+            "https://etilbudsavis.no/Coop-Mega/?publication=Bzhe9vZC"
+        ],
+        [
+            {
+                "@type": "CreativeWork",
+                "name": "",
+                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2F0sbQvRbm%2Fp-1.webp&w=250&s=389bab462df5dd9fd14d756afe837a4b",
+                "url": "https://etilbudsavis.no/Coop-Mega/?publication=0sbQvRbm"
+            },
+            "",
+            "https://etilbudsavis.no/Coop-Mega/?publication=0sbQvRbm"
+        ],
+        [
+            {
+                "@type": "CreativeWork",
+                "name": "Coop Mega Valentinlyst",
+                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2F_Rr5W0Pb%2Fp-1.webp&w=250&s=a01aa553fcd0cc79a7ee64bd3b8ffba9",
+                "url": "https://etilbudsavis.no/Coop-Mega/?publication=_Rr5W0Pb"
+            },
+            "Coop Mega Valentinlyst",
+            "https://etilbudsavis.no/Coop-Mega/?publication=_Rr5W0Pb"
+        ]
+    ],
+    "obs": [
+        [
+            {
+                "@type": "CreativeWork",
+                "name": "Obs City Lade",
+                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2FueS-BLrr%2Fp-1.webp&w=250&s=fd682cb653e771495827451ed8373be9",
+                "url": "https://etilbudsavis.no/Obs/?publication=ueS-BLrr"
+            },
+            "Obs City Lade",
+            "https://etilbudsavis.no/Obs/?publication=ueS-BLrr"
+        ],
+        [
+            {
+                "@type": "CreativeWork",
+                "name": "Alt til grillsesongen",
+                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2FkE7AtTAv%2Fp-1.webp&w=250&s=3a07aaa61aaebcdbdb855481d72f7374",
+                "url": "https://etilbudsavis.no/Obs/?publication=kE7AtTAv"
+            },
+            "Alt til grillsesongen",
+            "https://etilbudsavis.no/Obs/?publication=kE7AtTAv"
+        ],
+        [
+            {
+                "@type": "CreativeWork",
+                "name": "",
+                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2Fo_AhE199%2Fp-1.webp&w=250&s=958f2aa5e3f4784e946518a439e4bd4a",
+                "url": "https://etilbudsavis.no/Obs/?publication=o_AhE199"
+            },
+            "",
+            "https://etilbudsavis.no/Obs/?publication=o_AhE199"
+        ]
+    ]
+}

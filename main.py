@@ -3,6 +3,7 @@ from Gemini_Parser import Gemini_parser
 from fromJSONtoSQlite import JSONtoSQlite
 from kundeavis_fetch import download_kundeaviser, fetch_etilbudsavis
 import datetime
+import json
 from networking import updateWebsite, create_frontend_files, updateWebsite_testing, zip_and_saveFiles
 import yaml
 import os
@@ -30,26 +31,14 @@ def main(params):
 
     if params['download_kundeaviser']:
         avisurls = fetch_etilbudsavis(BUTIKKER, dato)
-        print('DEBUG: ', avisurls)
-        if avisurls:
-            download_kundeaviser(dato, avisurls)
-
-    if not params['skip_parsing']:
-        Gemini_parser(BUTIKKER, params['add_website_JSON'], params['add_tmp_json'], params['batchsize'], params['prev_failed_batches'])
-    nedlastede_butikker = JSONtoSQlite(params)
-    create_frontend_files(uke, Alle_butikker, nedlastede_butikker)
-
-    if params['test_mode']:
-        updateWebsite_testing(uke)
-    elif params['updateWebsite']:
-        updateWebsite()
-    if params['saveFiles']:
-        zip_and_saveFiles(dato)
-
-
-
+        for key, value in avisurls.items():
+            print(f"Store: {key} | {value} \n\n")
+        with open("URLs.json", 'w', encoding='utf-8') as fil:
+            json.dump(avisurls, fil, indent=4)
+        
+        
 
 with open('config.yaml', 'r') as fil:
     cfg = yaml.safe_load(fil)
 
-main(cfg[os.environ['cfg_type']])
+main(cfg['custom'])
