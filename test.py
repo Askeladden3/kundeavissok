@@ -1,5 +1,6 @@
 from google import genai
 from google.genai import errors
+from PIL import Image
 
 
 api_key = "AIzaSyBKCN8megAwQ7vbMznljmyBVi8J2eeNaXM"
@@ -17,58 +18,58 @@ api_key = "AIzaSyBKCN8megAwQ7vbMznljmyBVi8J2eeNaXM"
 
 
 
+from pydantic import BaseModel, Field
+from typing import List, Optional, Union, Literal
+from PIL import Image
+from enum import Enum
+from google.genai import types
 
 
 
+class response_schema(BaseModel):
+    url: str
+    store: str
 
+class FinalOutput(BaseModel):
+    results: list[response_schema]
 
-prompt = """You are provided with a list of JSON items from a norwegian grocery store. 
-Your goal is to determine which of these items (and thus their URLs) that displays the sales for different food items for this current week (known as a kundeavis)
-there are often other URLs that contain special promotions independent from the actual kundeavis. It is important that you do not choose these, even if they are valid for the current week.
+data_list = [
+    {"store": "Bunnpris", "url": "https://etilbudsavis.no/Bunnpris?publication=XMRccRw_", "image": Image.open(r"temp_output\bilder\bunnpris1.jpg")},
+    {"store": "Bunnpris", "url": "https://etilbudsavis.no/Bunnpris?publication=uZ72puyw", "image": Image.open(r"temp_output\bilder\bunnpris2.jpg")},
 
-return the URL from the correct item list when you are finished identifying it.
+    {"store": "Rema", "url": "https://etilbudsavis.no/REMA-1000?publication=yP5E6BwZ", "image": Image.open(r"temp_output\bilder\Rema1.webp")},
+    {"store": "Rema", "url": "https://etilbudsavis.no/REMA-1000?publication=RnkxTiTP", "image": Image.open(r"temp_output\bilder\Rema2.webp")},
+
+    {"store": "Obs", "url": "https://etilbudsavis.no/Obs?publication=ueS-BLrr", "image": Image.open(r"temp_output\bilder\obs1.webp")},
+    {"store": "Obs", "url": "https://etilbudsavis.no/Obs?publication=kE7AtTAv", "image": Image.open(r"temp_output\bilder\obs2.webp")},
+    {"store": "Obs", "url": "https://etilbudsavis.no/Obs?publication=o_AhE199", "image": Image.open(r"temp_output\bilder\obs3.webp")}
+]
+
+contents = []
+prompt_final = """You are a grocery flyer analyzer. You are provided with the URL and front page of multiple publications for several different stores.
+Your goal is to correctly identify which URL for each store which corresponds to that weeks 'kundeavis', which is a flyer of all sales on food items for that store that week.
 """
 
-URL_info = r"""[[{'@type': 'CreativeWork', 'name': 'Obs City Lade', 'image': 'https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2FueS-BLrr%2Fp-1.webp&w=250&s=fd682cb653e771495827451ed8373be9', 'url': 'https://etilbudsavis.no/Obs/?publication=ueS-BLrr'}, 'Obs City Lade', 'https://etilbudsavis.no/Obs/?publication=ueS-BLrr'],
-                [{'@type': 'CreativeWork', 'name': 'Alt til grillsesongen', 'image': 'https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2FkE7AtTAv%2Fp-1.webp&w=250&s=3a07aaa61aaebcdbdb855481d72f7374', 'url': 'https://etilbudsavis.no/Obs/?publication=kE7AtTAv'}, 'Alt til grillsesongen', 'https://etilbudsavis.no/Obs/?publication=kE7AtTAv'], 
-                [{'@type': 'CreativeWork', 'name': '', 'image': 'https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2Fo_AhE199%2Fp-1.webp&w=250&s=958f2aa5e3f4784e946518a439e4bd4a',"""
+
+for i, item in enumerate(data_list, start=1):
+    prompt_final += f"--- Item {i} ---\nStore: {item["store"]}\nURL: {item['url']}\nImage is provided below.\n\n"
+    
+    # Append the PIL image directly into the contents list
+    contents.append(item["image"])
+
+# Combine the text instructions and the images into the final contents payload
+final_contents = [prompt_final] + contents
 
 
-URL_info2 = r""" [
-        [
-            {
-                "@type": "CreativeWork",
-                "name": "Sommermat",
-                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2FBzhe9vZC%2Fp-1.webp&w=250&s=3fbc77a481c81565f49d91108645ab5a",
-                "url": "https://etilbudsavis.no/Coop-Mega/?publication=Bzhe9vZC"
-            },
-            "Sommermat",
-            "https://etilbudsavis.no/Coop-Mega/?publication=Bzhe9vZC"
-        ],
-        [
-            {
-                "@type": "CreativeWork",
-                "name": "",
-                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2F0sbQvRbm%2Fp-1.webp&w=250&s=389bab462df5dd9fd14d756afe837a4b",
-                "url": "https://etilbudsavis.no/Coop-Mega/?publication=0sbQvRbm"
-            },
-            "",
-            "https://etilbudsavis.no/Coop-Mega/?publication=0sbQvRbm"
-        ],
-        [
-            {
-                "@type": "CreativeWork",
-                "name": "Coop Mega Valentinlyst",
-                "image": "https://image-transformer-api.tjek.com/?u=s3%3A%2F%2Fsgn-prd-assets%2Fuploads%2F_Rr5W0Pb%2Fp-1.webp&w=250&s=a01aa553fcd0cc79a7ee64bd3b8ffba9",
-                "url": "https://etilbudsavis.no/Coop-Mega/?publication=_Rr5W0Pb"
-            },
-            "Coop Mega Valentinlyst",
-            "https://etilbudsavis.no/Coop-Mega/?publication=_Rr5W0Pb"
-        ]"""
 
 with genai.Client(api_key=api_key) as client:
     response = client.models.generate_content(
     model='gemini-3.5-flash',
-    contents=[prompt, URL_info2]
+    contents=final_contents,
+    config=types.GenerateContentConfig(
+        # Enforce JSON output matching your Pydantic schema
+        response_mime_type="application/json",
+        response_schema=FinalOutput,
+    )
     )
     print(response.text)

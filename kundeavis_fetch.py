@@ -267,37 +267,37 @@ def fetch_etilbudsavis(BUTIKKER, dato):
                     url = item.get("url")
 
 
-                    if helgetilbud in ['coop-prix', 'extra']:
-                        if not name:
-                            all_publication_urls.append(url)
-                    elif any(word in name.lower() for word in label_keywords):
-                        all_publication_urls.append(url)
+                    all_publication_urls.append(url)
             
             else:
                 print(f'ERROR: No valid publication URLs for {helgetilbud}. Skipping.')
                 failed_stores.append(helgetilbud)
                 continue
 
+            final_img_dict = dict()
             for pub_url in all_publication_urls:
+                final_img_links = []
                 driver.get(pub_url)
                 time.sleep(2)
                 html = driver.page_source
                 soup = BeautifulSoup(html, 'html.parser')
                 page_divs = soup.find_all('div', attrs={"data-page-number": True})
                 final_img_links = []
+                
 
                 #Finner bildene i divsa. bruker spesifikt data-src-lg (large) fordi best kvalitet på bilder.
                 for div in page_divs:
                     img_tag = div.find('img')
                     if img_tag and img_tag.get("data-src-lg"):
                         final_img_links.append(img_tag.get("data-src-lg"))
+                final_img_dict[pub_url] = final_img_links
 
         except Exception as e:
             print(f"An error occurred: {e}")
             failed_stores.append(helgetilbud)
         
         else:
-            kundeavisen[helgetilbud] = final_img_links
+            kundeavisen[helgetilbud] = final_img_dict
             print(f"Successfully extracted kundeavis from {HELGETILBUDAVISER[helgetilbud]}")
 
         finally:
