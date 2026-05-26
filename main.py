@@ -11,7 +11,7 @@ from AI_model_setup import AI_models
 
 def main(params):
 
-    Alle_butikker = ['meny', 'rema-1000', 'kiwi', 'extra','bunnpris','coop-prix','joker','spar','coop-mega','coop-marked','obs']
+    Alle_butikker = ['meny', 'rema-1000', 'kiwi', 'extra','bunnpris','coop-prix','joker','coop-mega','coop-marked','obs']
     if not params['BUTIKKER']:
         BUTIKKER = Alle_butikker
     else:
@@ -39,7 +39,7 @@ def main(params):
             download_kundeaviser(dato, avisurls)
 
     if not params['skip_parsing']:
-        Gemini_parser(BUTIKKER, params['add_website_JSON'], params['add_tmp_json'], params['batchsize'], params['prev_failed_batches'])
+        Gemini_parser(BUTIKKER, AI_models, params['add_website_JSON'], params['add_tmp_json'], params['batchsize'], params['prev_failed_batches'])
     nedlastede_butikker = JSONtoSQlite(params)
     create_frontend_files(uke, Alle_butikker, nedlastede_butikker)
 
