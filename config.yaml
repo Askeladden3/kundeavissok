@@ -13,7 +13,7 @@ standard:
 
 custom:
   test_mode: true
-  BUTIKKER: 
+  BUTIKKER: ['rema-1000', 'bunnpris']
   download_kundeaviser: true
   skip_parsing: false
   batchsize: 17 #Hvis satt til None brukes automatisk algoritme, så kan være lettere hvis usikker på hva som er bra

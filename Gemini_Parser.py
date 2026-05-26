@@ -9,65 +9,12 @@ import math
 import pandas as pd
 from google import genai
 from google.genai import errors
-from pydantic import BaseModel, Field
-from typing import List, Optional, Union, Literal
 from PIL import Image
-from enum import Enum
+from pydantic_models import FlyerBatch
 
 
-def Gemini_parser(BUTIKKER, add_website_json=False, add_tmp_json=False, batchsize=None, prev_failed_batches=None):
+def Gemini_parser(BUTIKKER, AI_models, add_website_json=False, add_tmp_json=False, batchsize=None, prev_failed_batches=None):
     '''Sends API calls to extract food items from grocery flyers'''
-
-    class Category(str, Enum):
-        MEAT = "meat"
-        BREAD_TOPPINGS = "bread_toppings"
-        DAIRY = "dairy"
-        EGGS = "eggs"
-        BAKERY = "bakery"
-        SEAFOOD = "seafood"
-        SNACKS_CANDY = "snacks_candy"
-        PIZZA = "pizza"
-        SODA = "soda"
-        PRODUCE = "produce"
-        OTHER = "other"
-
-    class Unit(str, Enum):
-        STK = "stk"
-        ML = "ml"
-        L = "L"
-        G = "g"
-        KG = "kg"
-
-    class base_deal(BaseModel):
-        image_index : int = Field(description="Index of image item is from. Always provided in prompt.")
-        name: str = Field(description="Product name. Do not include amount or numbers here.")
-        total_mass: Optional[float] = Field(default=None, description='Total weight/volume')
-        unit: Optional[Unit] = Field(default=None, description='"stk", "kg", "g", "ml" or "l"')
-        store: str = Field(description="Store that sells the items in image. Always provided in prompt.")
-        brand : Optional[str] = Field(default=None, description= "If there is an identifiable brand connected to this item write it here. Otherwise, leave null.")
-        category: Category = Field(description="Categorize the item based on its visual appearance and name.")
-        protein_type: Optional[Literal["beef", "pork", "poultry", "lamb", "mixed", "plant_based"]] = Field(
-        default=None, 
-        description="If the item is RAW_MEAT or BREAD_TOPPINGS containing meat, identify the primary protein. Otherwise, leave null.")
-
-
-    class standard_deal(base_deal):
-        deal_type : Literal["standard_deal"] = Field(description = "Fixed label, do not look for this in text.")
-        price_per_unit: float = Field(description='price per kg or liter.')
-        total_price: float = Field(description='Total sale price (decimal)')
-
-    class percentage_deal(base_deal):
-        deal_type : Literal["percentage_deal"] = Field(description = "Fixed label, do not look for this in text.")
-        percentage_off : int = Field(description="Discount percentage")
-
-    class bogo_deal(base_deal):
-        deal_type : Literal["bogo_deal"] = Field(description = "Fixed label, do not look for this in text.")
-        items_received: int = Field(description="Total number of items the customer gets (e.g., 3 in '3 for 2').")
-        items_paid_for: int = Field(description="Number of items the customer actually pays for (e.g., 2 in '3 for 2').")
-
-
-    class FlyerBatch(BaseModel):
-        flyers: List[Union[standard_deal, percentage_deal, bogo_deal]]
 
     all_deals = ['standard_deal', 'percentage_deal', 'bogo_deal']
 
@@ -96,34 +43,6 @@ def Gemini_parser(BUTIKKER, add_website_json=False, add_tmp_json=False, batchsiz
         prompts = f.read()
         prompts = prompts.split('/'*5)
         prompt = prompts[1]
-
-
-    class API_model():
-
-        def __init__(self, id, name, RPM, RPD):
-            self.id = id
-            self.name = name
-            self.n_calls = 0
-            self.is_exhausted = False
-            self.RPM = RPM
-            self.sleeptime = 60 // self.RPM
-            self.rate_limit = RPD
-
-        def rate_limit_reached(self):
-            if self.n_calls > self.rate_limit:
-                self.is_exhausted = True
-                return True
-            else:
-                return False
-
-
-    Gem25_flash = API_model('gemini-2.5-flash', 'Gemini Flash', 5, 20)
-    Gem3_flash = API_model('gemini-3-flash-preview', 'Gemini 3 Flash', 5, 20)
-    Gem31_flash_lite = API_model('gemini-3.1-flash-lite-preview', 'Gemini 3.1 Flash Lite', 15, 500)
-    #Gem_pro = API_model('pro', 'Gemini Pro', 2, 50)
-
-    AI_models = [Gem3_flash, Gem31_flash_lite, Gem25_flash]
-
     
     def save_to_json(data : pd.DataFrame, filename):
         """Saves a list of data to a JSON file"""
@@ -133,7 +52,7 @@ def Gemini_parser(BUTIKKER, add_website_json=False, add_tmp_json=False, batchsiz
         except IOError as e:
             print(f"Error writing to output file '{filename}': {e}")
 
-    def analyze_flyer_batch(flyer_batch, model : API_model, batchidx = None, n_batches=None):
+    def analyze_flyer_batch(flyer_batch, model, batchidx = None, n_batches=None):
 
         with genai.Client(api_key = API_KEY) as client:
             batch_image_list = list()
