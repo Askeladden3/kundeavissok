@@ -7,10 +7,29 @@ import requests
 import json
 import os
 from bs4 import BeautifulSoup
+from pydantic_models import chosen_urls
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
+from PIL import Image
+from google.genai import types
+from google import genai
+from google.genai import errors
+from AI_model_setup import front_page_model
+import traceback
+
+def download_from_url(url,save_path):
+    try:
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+
+        with open(save_path, 'wb') as file:
+            for chunk in response.iter_content(chunk_size=8192):
+                file.write(chunk)
+        print(f"Image downloaded successfully to: {save_path}")
+    except requests.exceptions.RequestException as e:
+        print(f"Error downloading image: {e}")
 
 
 def fetch_kundeavis(BUTIKKER, dato):
@@ -56,10 +75,6 @@ def fetch_kundeavis(BUTIKKER, dato):
     kundeavisen = {}
     kundeavisen['header'] = [år, uke, BUTIKKER]
 
-
-
-
-
     for butikk in BUTIKKER:
 
         avis_src = f"https://s.kupp.no/prod/pages/{butikk}/{år}/{uke:02d}/"
@@ -90,129 +105,6 @@ def fetch_kundeavis(BUTIKKER, dato):
 
     return kundeavisen
 
-def fetch_helgetilbud(dato):
-
-    HELGETILBUDAVISER = {'bunnpris-no':'bunnpris', 'coop-prix-no':'coop-prix'}
-
-    #['rema-1000', 'kiwi', 'extra','bunnpris','meny','coop-prix','joker','spar','coop-mega','coop-marked','obs']
-    curr_date, år, uke = dato
-    kundeavisen = {}
-    kundeavisen['header'] = [år, uke, list(HELGETILBUDAVISER.values())]
-
-    chromedriver_path = 'chromedriver.exe' 
-    service = Service(chromedriver_path)
-    options = Options()
-    options.add_argument("--headless")
-
-
-    for idx, helgetilbud in enumerate(HELGETILBUDAVISER.keys()):
-        try:
-            driver = webdriver.Chrome(service=service, options=options)
-            url = f"https://mattilbud.no/kundeaviser/{helgetilbud}" 
-            driver.get(url)
-
-            time.sleep(0.3) 
-
-            html_source = driver.page_source
-            href_links = list()
-            matches = re.finditer('href="/kundeaviser', html_source)
-            for match in matches:
-                href_links.append(html_source[match.start():match.end() + 50].split('"')[1])
-
-            finalurl = "https://mattilbud.no" + href_links[1]
-        except Exception as e:
-            print(f"An error occurred: {e}")
-
-        finally:
-            driver.quit()
-
-
-        try:
-            driver = webdriver.Chrome(service=service, options=options)
-            driver.get(finalurl)
-            time.sleep(0.3) 
-
-            page = driver.page_source
-            soup = BeautifulSoup(page, features="html.parser")
-
-            matches = soup.find_all('img', alt=True)
-
-            image_urls = list()
-
-            for url in matches:
-                image_urls.append(url['src'])
-        except Exception as e:
-            print(f'En feil har skjedd: {e}')
-        
-        finally:
-            driver.quit()
-
-        kundeavisen[list(HELGETILBUDAVISER.values())[idx]] = image_urls
-
-    return kundeavisen
-
-def fetch_kundeavis_mattilbud(dato):
-
-    HELGETILBUDAVISER = {'bunnpris-no':'bunnpris', 'coop-prix-no':'coop-prix'}
-
-    #['rema-1000', 'kiwi', 'extra','bunnpris','meny','coop-prix','joker','spar','coop-mega','coop-marked','obs']
-    curr_date, år, uke = dato
-    kundeavisen = {}
-    kundeavisen['header'] = [år, uke, list(HELGETILBUDAVISER.values())]
-
-    chromedriver_path = 'chromedriver.exe' 
-    service = Service(chromedriver_path)
-    options = Options()
-    options.add_argument("--headless")
-
-
-    for idx, helgetilbud in enumerate(HELGETILBUDAVISER.keys()):
-        try:
-            driver = webdriver.Chrome(service=service, options=options)
-            url = f"https://mattilbud.no/kundeaviser/{helgetilbud}" 
-            driver.get(url)
-
-            time.sleep(0.3) 
-
-            html_source = driver.page_source
-            href_links = list()
-            matches = re.finditer('href="/kundeaviser', html_source)
-            for match in matches:
-                href_links.append(html_source[match.start():match.end() + 50].split('"')[1])
-
-            finalurl = "https://mattilbud.no" + href_links[1]
-        except Exception as e:
-            print(f"An error occurred: {e}")
-
-        finally:
-            driver.quit()
-
-
-        try:
-            driver = webdriver.Chrome(service=service, options=options)
-            driver.get(finalurl)
-            time.sleep(0.3) 
-
-            page = driver.page_source
-            soup = BeautifulSoup(page, features="html.parser")
-
-            matches = soup.find_all('img', alt=True)
-
-            image_urls = list()
-
-            for url in matches:
-                image_urls.append(url['src'])
-        except Exception as e:
-            print(f'En feil har skjedd: {e}')
-        
-        finally:
-            driver.quit()
-
-        kundeavisen[list(HELGETILBUDAVISER.values())[idx]] = image_urls
-
-    return kundeavisen
-
-
 def fetch_etilbudsavis(BUTIKKER, dato):
 
    # HELGETILBUDAVISER = {'Bunnpris':'bunnpris', 'REMA-1000':'rema-1000', 'Coop-Mega':'coop-mega', 'Coop-Prix':'coop-prix', 'Extra':'extra', 'KIWI':'kiwi', 'MENY':'meny', 'Obs':'obs', 'Joker':'joker', 'SPAR':'spar'}
@@ -223,6 +115,8 @@ def fetch_etilbudsavis(BUTIKKER, dato):
     kundeavisen = {}
     kundeavisen['header'] = [år, uke, list(BUTIKKER)]
     failed_stores = []
+    page_struct = []
+    API_KEY = os.environ["GEMINI_API_KEY"]
 
     service = Service(ChromeDriverManager().install())
     options = Options()
@@ -230,6 +124,7 @@ def fetch_etilbudsavis(BUTIKKER, dato):
 
 
     for helgetilbud in BUTIKKER:
+        count = 0
         try:
             driver = webdriver.Chrome(service=service, options=options)
             driver.get("https://etilbudsavis.no")
@@ -249,9 +144,6 @@ def fetch_etilbudsavis(BUTIKKER, dato):
             html_source = driver.page_source
             soup = BeautifulSoup(html_source, 'html.parser')
             all_publication_urls = []
-            final_img_links = []
-            label_keywords = ["uke", "kundeavis", "coop mega", "obs", 'coop marked']
-
             script_tag = soup.find("script", type="application/ld+json")
 
 
@@ -267,11 +159,7 @@ def fetch_etilbudsavis(BUTIKKER, dato):
                     url = item.get("url")
 
 
-                    if helgetilbud in ['coop-prix', 'extra', 'kiwi']:
-                        if not name:
-                            all_publication_urls.append(url)
-                    elif any(word in name.lower().split() for word in label_keywords):
-                        all_publication_urls.append(url)
+                    all_publication_urls.append(url)
             
             else:
                 print(f'ERROR: No valid publication URLs for {helgetilbud}. Skipping.')
@@ -284,24 +172,79 @@ def fetch_etilbudsavis(BUTIKKER, dato):
                 html = driver.page_source
                 soup = BeautifulSoup(html, 'html.parser')
                 page_divs = soup.find_all('div', attrs={"data-page-number": True})
-                final_img_links = []
+                try:
+                    front_page = page_divs[0].find('img')
+                    if front_page and front_page.get("data-src-lg"):
+                        save_path = f"temp_output/front_pages/{helgetilbud}_{count}.jpg"
+                        download_from_url(front_page.get("data-src-lg"), save_path)
+                        count += 1
+                        
 
-                #Finner bildene i divsa. bruker spesifikt data-src-lg (large) fordi best kvalitet på bilder.
-                for div in page_divs:
-                    img_tag = div.find('img')
-                    if img_tag and img_tag.get("data-src-lg"):
-                        final_img_links.append(img_tag.get("data-src-lg"))
+                        pub_url_element = {
+                            "store": helgetilbud,
+                            "URL": pub_url,
+                            "front_page_path": save_path,
+                            "divs": page_divs
+                        }
+
+                        page_struct.append(pub_url_element)
+                    else:
+                        raise ValueError("No valid page.")
+                except Exception as e:
+                    print(f'No valid front page. Skipping URL {pub_url} from store {helgetilbud}.')
+                    continue
+
+                    
+
 
         except Exception as e:
             print(f"An error occurred: {e}")
+            traceback.print_exc()
             failed_stores.append(helgetilbud)
         
         else:
-            kundeavisen[helgetilbud] = final_img_links
-            print(f"Successfully extracted kundeavis from {HELGETILBUDAVISER[helgetilbud]}")
+            print(f"Successfully extracted all valid publication URLs from {HELGETILBUDAVISER[helgetilbud]}")
 
         finally:
             driver.quit()
+
+
+    contents = []
+    prompt_final = """You are a grocery flyer analyzer. You are provided with the URL and front page of multiple publications for several different stores.
+    Your goal is to correctly identify which URL for each store which corresponds to that weeks 'kundeavis', which is a flyer of all sales on food items for that store that week.
+    """
+
+
+    for i, item in enumerate(page_struct, start=1):
+        prompt_final += f"--- Item {i} ---\nStore: {item["store"]}\nURL: {item['URL']}\nImage is provided below.\n\n"
+        
+        contents.append(Image.open(item["front_page_path"]))
+
+    final_contents = [prompt_final] + contents
+
+
+    with genai.Client(api_key=API_KEY) as client:
+        response = client.models.generate_content(
+        model=front_page_model.id,
+        contents=final_contents,
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=chosen_urls,
+        )
+        )
+
+    for pub_url_dict in json.loads(response.text)['results']:
+        full_pub_url_dict = dict()
+        for match_case in page_struct:
+            if pub_url_dict['URL'] == match_case['URL']:
+                full_pub_url_dict = match_case
+
+        flyer_img_links = []
+        for div in full_pub_url_dict['divs']:
+            img_tag = div.find('img')
+            if img_tag and img_tag.get("data-src-lg"):
+                flyer_img_links.append(img_tag.get("data-src-lg"))
+        kundeavisen[pub_url_dict['store']] = flyer_img_links
 
     if failed_stores:
         print(f'Failed stores: {failed_stores}')
@@ -319,18 +262,6 @@ def download_kundeaviser(dato, kundeaviser_urls):
         os.mkdir(f'temp_output/bilder')
     except:
         pass
-
-    def download_from_url(url,save_path):
-        try:
-            response = requests.get(url, stream=True)
-            response.raise_for_status()
-
-            with open(save_path, 'wb') as file:
-                for chunk in response.iter_content(chunk_size=8192):
-                    file.write(chunk)
-            print(f"Image downloaded successfully to: {save_path}")
-        except requests.exceptions.RequestException as e:
-            print(f"Error downloading image: {e}")
 
 
     for key, value in kundeaviser_urls.items():

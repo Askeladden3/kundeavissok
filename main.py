@@ -3,13 +3,15 @@ from Gemini_Parser import Gemini_parser
 from fromJSONtoSQlite import JSONtoSQlite
 from kundeavis_fetch import download_kundeaviser, fetch_etilbudsavis
 import datetime
+import json
 from networking import updateWebsite, create_frontend_files, updateWebsite_testing, zip_and_saveFiles
 import yaml
 import os
+from AI_model_setup import AI_models
 
 def main(params):
 
-    Alle_butikker = ['meny', 'rema-1000', 'kiwi', 'extra','bunnpris','coop-prix','joker','spar','coop-mega','coop-marked','obs']
+    Alle_butikker = ['meny', 'rema-1000', 'kiwi', 'extra','bunnpris','coop-prix','joker','coop-mega','coop-marked','obs']
     if not params['BUTIKKER']:
         BUTIKKER = Alle_butikker
     else:
@@ -25,7 +27,10 @@ def main(params):
         os.mkdir('temp_output')
     except:
         pass
-
+    try:
+        os.mkdir('temp_output/front_pages')
+    except:
+        pass
 
 
     if params['download_kundeaviser']:
@@ -34,7 +39,7 @@ def main(params):
             download_kundeaviser(dato, avisurls)
 
     if not params['skip_parsing']:
-        Gemini_parser(BUTIKKER, params['add_website_JSON'], params['add_tmp_json'], params['batchsize'], params['prev_failed_batches'])
+        Gemini_parser(BUTIKKER, AI_models, params['add_website_JSON'], params['add_tmp_json'], params['batchsize'], params['prev_failed_batches'])
     nedlastede_butikker = JSONtoSQlite(params)
     create_frontend_files(uke, Alle_butikker, nedlastede_butikker)
 
@@ -52,3 +57,4 @@ with open('config.yaml', 'r') as fil:
     cfg = yaml.safe_load(fil)
 
 main(cfg[os.environ['cfg_type']])
+

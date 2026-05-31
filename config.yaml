@@ -12,13 +12,13 @@ standard:
   updateWebsite: true
 
 custom:
-  test_mode: false
-  BUTIKKER: ['kiwi', 'bunnpris']
+  test_mode: true
+  BUTIKKER: ['rema-1000', 'bunnpris']
   download_kundeaviser: true
   skip_parsing: false
   batchsize: 17 #Hvis satt til None brukes automatisk algoritme, så kan være lettere hvis usikker på hva som er bra
-  prev_failed_batches: #Liste med failed batches som skal reprosseseres (Ikke idx, men batch_nr (altså hvis 1. batch feilet, så skriv 1 og ikke 0 i listen))
-  append_SQL: true #Whether to append new entries to existing SQL table or replace them
+  prev_failed_batches:  #Liste med failed batches som skal reprosseseres (Ikke idx, men batch_nr (altså hvis 1. batch feilet, så skriv 1 og ikke 0 i listen))
+  append_SQL: false #Whether to append new entries to existing SQL table or replace them
   add_website_JSON: false
   add_tmp_json: false
   saveFiles: false
