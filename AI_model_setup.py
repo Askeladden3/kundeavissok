@@ -5,6 +5,7 @@ class API_model():
         self.name = name
         self.n_calls = 0
         self.is_exhausted = False
+        self.in_high_demand = False
         self.RPM = RPM
         self.sleeptime = 60 // self.RPM
         self.rate_limit = RPD

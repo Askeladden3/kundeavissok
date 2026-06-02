@@ -103,6 +103,10 @@ def Gemini_parser(BUTIKKER, AI_models, add_website_json=False, add_tmp_json=Fals
                             model.is_exhausted = True
                             print(f"Error 429 recieved. Now stopping the use of {model.name}.")
                             return None
+                        elif e.code == 503:
+                            print("Error for high demand recieved. WIll now wait 25 extra seconds between each try.")
+                            model.in_high_demand = True
+                            attempt += 1
                         else: 
                             print(f"  API request failed (attempt {attempt + 1}/{max_retries}): {e}")
                             attempt += 1
@@ -110,9 +114,9 @@ def Gemini_parser(BUTIKKER, AI_models, add_website_json=False, add_tmp_json=Fals
                     print(f"  API request failed (attempt {attempt + 1}/{max_retries}): {e}")
                     attempt += 1
 
-
-
                 if attempt < max_retries - 1:
+                    if model.in_high_demand:
+                        time.sleep(25)
                     time.sleep(5)
                 else:
                     print(f"  Final API request failed. Response: {response.text if 'response' in locals() else 'No response'}")
@@ -235,7 +239,7 @@ def Gemini_parser(BUTIKKER, AI_models, add_website_json=False, add_tmp_json=Fals
         print(f"{n_images} bilder skal behandles.")
 
 
-        model = AI_models[1]
+        model = AI_models[0]
 
 
         if batchsize is None:
