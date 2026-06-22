@@ -3,6 +3,7 @@ import re
 from datetime import datetime
 import datetime
 import time
+import sys
 import requests
 import json
 import os
@@ -225,35 +226,54 @@ def fetch_etilbudsavis(BUTIKKER, dato):
 
     final_contents = [prompt_final] + contents
 
+    attempts = 0
+    max_retries = 3
 
-    with genai.Client(api_key=API_KEY) as client:
-        response = client.models.generate_content(
-        model=front_page_model.id,
-        contents=final_contents,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=chosen_urls,
-        )
-        )
+    while (attempts < max_retries+1):
+        try:
+            with genai.Client(api_key=API_KEY) as client:
+                response = client.models.generate_content(
+                model=front_page_model.id,
+                contents=final_contents,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=chosen_urls,
+                )
+                )
 
-    for pub_url_dict in json.loads(response.text)['results']:
-        full_pub_url_dict = dict()
-        for match_case in page_struct:
-            if pub_url_dict['URL'] == match_case['URL']:
-                full_pub_url_dict = match_case
+            for pub_url_dict in json.loads(response.text)['results']:
+                full_pub_url_dict = dict()
+                for match_case in page_struct:
+                    if pub_url_dict['URL'] == match_case['URL']:
+                        full_pub_url_dict = match_case
 
-        flyer_img_links = []
-        for div in full_pub_url_dict['divs']:
-            img_tag = div.find('img')
-            if img_tag and img_tag.get("data-src-lg"):
-                flyer_img_links.append(img_tag.get("data-src-lg"))
-        kundeavisen[pub_url_dict['store']] = flyer_img_links
+                flyer_img_links = []
+                for div in full_pub_url_dict['divs']:
+                    img_tag = div.find('img')
+                    if img_tag and img_tag.get("data-src-lg"):
+                        flyer_img_links.append(img_tag.get("data-src-lg"))
+                kundeavisen[pub_url_dict['store']] = flyer_img_links
 
-    if failed_stores:
-        print(f'Failed stores: {failed_stores}')
-    else:
-        print("All stores extracted successfully!")
-    return kundeavisen
+            if failed_stores:
+                print(f'Failed stores: {failed_stores}')
+            else:
+                print("All stores extracted successfully!")
+            return kundeavisen
+        except errors.APIError as e:
+            if e.code == 429:   
+                front_page_model.is_exhausted = True
+                print(f"Error 429 recieved for front page analyzing. Aborting program.")
+                return None
+            elif e.code == 503:
+                print("Error for high demand recieved. Will wait for 30 seconds before attempting again.")
+                time.sleep(30)
+                attempt += 1
+            else: 
+                print(f"General API request failure (attempt {attempt + 1}/{max_retries}): {e}")
+                attempt += 1
+    
+    print("Max number of retries reached. Exiting program")
+    sys.exit()
 
 def download_kundeaviser(dato, kundeaviser_urls):
 
