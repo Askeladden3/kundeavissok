@@ -216,7 +216,7 @@ def fetch_etilbudsavis(BUTIKKER, dato):
 
 
     for i, item in enumerate(page_struct, start=1):
-        prompt_final += f"--- Item {i} ---\nStore: {item["store"]}\nURL: {item['URL']}\nImage is provided below.\n\n"
+        prompt_final += f'--- Item {i} ---\nStore: {item["store"]}\nURL: {item["URL"]}\nImage is provided below.\n\n'
         
         contents.append(Image.open(item["front_page_path"]))
 
