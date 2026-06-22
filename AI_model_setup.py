@@ -25,4 +25,4 @@ Gem31_flash_lite = API_model('gemini-3.1-flash-lite', 'Gemini 3.1 Flash Lite', 1
 #Gem_pro = API_model('pro', 'Gemini Pro', 2, 50)
 
 AI_models = [Gem35_flash, Gem3_flash, Gem31_flash_lite, Gem25_flash]
-front_page_model = Gem3_flash
+front_page_model = Gem35_flash
