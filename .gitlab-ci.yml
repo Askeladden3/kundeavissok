@@ -3,18 +3,31 @@ stages:
 
 variables:
   PYTHONUNBUFFERED: "1"
+  # Tell apt and pip to store their installers inside the project directory so GitLab can cache them
+  APT_CACHE_DIR: "$CI_PROJECT_DIR/.cache/apt"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
 cache:
+  key: selenium-env-cache
   paths:
+    - .cache/apt
     - .cache/pip
 
 weekly_job:
   stage: run
-  image: joyzours/python-selenium:latest
+  image: python:3.12-slim
+  before_script:
+    # 1. Ensure the cache directories exist
+    - mkdir -p .cache/apt .cache/pip
+    # 2. Force apt to use our local cache directory for downloading packages
+    - apt-get update -yq
+    - apt-get -o dir::cache::archives="$APT_CACHE_DIR" install -y chromium chromium-driver
   script:
+    # 3. Pip will automatically pick up PIP_CACHE_DIR from the environment variables
     - python -m pip install --upgrade pip
     - python -m pip install -r requirements.txt
+    
+    - echo "Running weekly job with cached dependencies..."
     - python main.py
   only:
     - schedules
