@@ -226,10 +226,10 @@ def fetch_etilbudsavis(BUTIKKER, dato):
 
     final_contents = [prompt_final] + contents
 
-    attempts = 0
+    attempt = 0
     max_retries = 3
 
-    while (attempts < max_retries+1):
+    while (attempt < max_retries+1):
         try:
             with genai.Client(api_key=API_KEY) as client:
                 response = client.models.generate_content(
