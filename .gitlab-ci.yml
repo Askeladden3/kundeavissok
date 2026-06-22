@@ -3,15 +3,14 @@ stages:
 
 weekly_job:
   stage: run
-  image: python:3.11-slim  
+  image: python:3.12-slim
   variables:
     PYTHONUNBUFFERED: "1"
+  before_script:
+    - apt-get update && apt-get install -y chromium chromium-driver wget unzip
   script:
-    # 1. Upgrade pip and install requirements directly into the container
     - python -m pip install --upgrade pip
     - python -m pip install -r requirements.txt
-    
-    # 2. Run the actual script
     - echo "Running weekly job on Docker Linux..."
     - python main.py
   only:

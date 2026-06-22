@@ -121,6 +121,9 @@ def fetch_etilbudsavis(BUTIKKER, dato):
     service = Service(ChromeDriverManager().install())
     options = Options()
     options.add_argument("--headless")
+    options.add_argument("--no-sandbox")                # Required: Bypasses OS security model inside Docker
+    options.add_argument("--disable-dev-shm-usage")     # Required: Prevents Docker from running out of memory
+    options.add_argument("--disable-gpu")
 
 
     for helgetilbud in BUTIKKER:
