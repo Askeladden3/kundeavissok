@@ -10,9 +10,7 @@ import os
 from bs4 import BeautifulSoup
 from pydantic_models import chosen_urls
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.firefox.options import Options
 from PIL import Image
 from google.genai import types
 from google import genai
@@ -119,18 +117,16 @@ def fetch_etilbudsavis(BUTIKKER, dato):
     page_struct = []
     API_KEY = os.environ["GEMINI_API_KEY"]
 
-    service = Service(executable_path="/usr/bin/chromedriver")
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")                # Required: Bypasses OS security model inside Docker
     options.add_argument("--disable-dev-shm-usage")     # Required: Prevents Docker from running out of memory
     options.add_argument("--disable-gpu")
-    options.binary_location = "/usr/bin/chromium"
-
+    
     for helgetilbud in BUTIKKER:
         count = 0
         try:
-            driver = webdriver.Chrome(service=service, options=options)
+            driver = webdriver.Firefox(options=options)
             driver.get("https://etilbudsavis.no")
 
             driver.add_cookie({

@@ -21,7 +21,7 @@ weekly_job:
     - mkdir -p .cache/apt .cache/pip
     # 2. Force apt to use our local cache directory for downloading packages
     - apt-get update -yq
-    - apt-get -o dir::cache::archives="$APT_CACHE_DIR" install -y chromium chromium-driver
+    - apt-get -o dir::cache::archives="$APT_CACHE_DIR" install -y firefox geckodriver
   script:
     # 3. Pip will automatically pick up PIP_CACHE_DIR from the environment variables
     - python -m pip install --upgrade pip
