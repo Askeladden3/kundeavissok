@@ -11,6 +11,88 @@ from google import genai
 from google.genai import errors
 from PIL import Image
 from pydantic_models import FlyerBatch
+from openai import OpenAI
+
+
+def encode_image_to_data_uri(image_path: str) -> str:
+    """Reads an image file and returns a base64 data URI."""
+    with open(image_path, "rb") as image_file:
+        encoded_string = Image.open(image_path).convert("RGB").tobytes()
+        b64 = base64.b64encode(encoded_string).decode("utf-8")
+    return f"data:image/jpeg;base64,{b64}"
+
+
+def model_api_call(
+    provider: str,
+    model_id: str,
+    prompt: str,
+    image_paths: list,
+    response_format: type,
+    temperature: float = 0.3,
+    response_mime_type: str = "application/json"
+):
+    """Unified API call function for both Google and OpenAI providers.
+    
+    Args:
+        provider: 'google' or 'openai'
+        model_id: Model identifier (e.g. 'gemini-3.5-flash' or '/models/gemma4-12B-nvfp4')
+        prompt: The text prompt
+        image_paths: List of image file paths to include
+        response_format: Pydantic model class for structured output
+        temperature: Sampling temperature (default 0.3)
+        response_mime_type: MIME type for response (default 'application/json')
+    
+    Returns:
+        For Google: response.text (JSON string)
+        For OpenAI: parsed Pydantic model instance
+    """
+    import base64
+
+    # Initialize provider clients
+    if provider == "google":
+        client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    elif provider == "openai":
+        # Use hardcoded local backend URL and dummy key (no auth needed for local)
+        client = OpenAI(base_url="http://100.98.148.94:8001/v1", api_key="dummy-key")
+    else:
+        raise ValueError(f"Unknown provider: {provider}. Must be 'google' or 'openai'.")
+
+    # Build message content list
+    content = [{"type": "text", "text": prompt}]
+    for img_path in image_paths:
+        if provider == "openai":
+            content.append(
+                {
+                    "type": "image_url",
+                    "image_url": {"url": encode_image_to_data_uri(img_path)},
+                }
+            )
+        else:
+            content.append(Image.open(img_path))
+
+    if not content:
+        raise ValueError("No content (prompt or images) provided.")
+
+    try:
+        if provider == "google":
+            response = client.models.generate_content(
+                model=model_id,
+                contents=content,
+                config={"response_mime_type": response_mime_type,
+                        "response_schema": response_format.model_json_schema()}
+            )
+            return response.text
+        else:  # openai
+            response = client.beta.chat.completions.parse(
+                model=model_id,
+                messages=[{"role": "user", "content": content}],
+                response_format=response_format,
+                temperature=temperature,
+            )
+            return response.choices[0].message.parsed
+
+    except Exception as e:
+        raise RuntimeError(f"API call failed for provider '{provider}' with model '{model_id}': {e}")
 
 
 def Gemini_parser(BUTIKKER, AI_models, add_website_json=False, add_tmp_json=False, batchsize=None, prev_failed_batches=None):
@@ -54,84 +136,103 @@ def Gemini_parser(BUTIKKER, AI_models, add_website_json=False, add_tmp_json=Fals
 
     def analyze_flyer_batch(flyer_batch, model, batchidx = None, n_batches=None):
 
-        with genai.Client(api_key = API_KEY) as client:
-            batch_image_list = list()
-            batch_n = batchidx+1
+        batch_image_list = list()
+        batch_image_paths = list()
+        batch_n = batchidx+1
         
-            # Går igjennom hver flyer-objekt i listen og legger til bildedata
-            for flyer_page in flyer_batch:
-                try:
-                    #"Image index" refererer egentlig til sidetall i kundeavisen, men denne formuleringen er bedre for LLM-forståelse
-                    batch_image_list.append(f"Image index {flyer_page.page_number}, Store {flyer_page.store}:")
-                    batch_image_list.append(Image.open(flyer_page.img_path))
-                except IOError as e:
-                    print(f"Skipping file due to error: {flyer_page.img_path} - {e}")
-                    continue
+        # Build image list for both providers
+        for flyer_page in flyer_batch:
+            try:
+                batch_image_list.append(f"Image index {flyer_page.page_number}, Store {flyer_page.store}:")
+                img_path = flyer_page.img_path
+                batch_image_paths.append(img_path)
+                batch_image_list.append(Image.open(img_path))
+            except IOError as e:
+                print(f"Skipping file due to error: {img_path} - {e}")
+                continue
 
-            if not batch_image_list:
-                print("No valid images to process.")
+        if not batch_image_paths:
+            print("No valid images to process.")
+            return None
+
+        model_id = model.id  # Ensure we use the model's id field
+        # Detect provider: OpenAI if model_id starts with '/models/', else Google
+        provider = "openai" if model_id.startswith("/models/") else "google"
+
+        errorFlag = False
+        attempt = 0
+        while attempt < (max_retries):
+            model.n_calls += 1
+
+            try:
+                response = model_api_call(
+                    provider=provider,
+                    model_id=model_id,
+                    prompt=prompt,
+                    image_paths=batch_image_paths,
+                    response_format=FlyerBatch,
+                    temperature=0.3,
+                    response_mime_type="application/json"
+                )
+                
+                # Handle different response formats
+                batch_deal_df = pd.DataFrame([])
+                if provider == "google":
+                    # Google returns a JSON string
+                    try:
+                        batch_deal_df = pd.DataFrame(json.loads(response)['flyers'])
+                    except (KeyError, TypeError) as e:
+                        print(f"  Failed to parse Google response: {e}")
+                        print(f"  Response content: {response[:200]}")
+                        raise
+                else:  # openai
+                    # OpenAI returns a parsed Pydantic model
+                    batch_deal_df = pd.DataFrame([response])
+                    batch_deal_df = batch_deal_df.rename(columns={"image_index":"page_number"})
+                    try:
+                        batch_deal_df.loc[batch_deal_df['category'] == 'eggs', 'unit'] = 'stk'
+                    except:
+                        pass
+
+                print(f'\nDeals successfully extracted from batch nr. {batch_n} ({flyer_batch[0].store} | {flyer_batch[-1].store})')
+                return batch_deal_df
+
+            except errors.APIError as e:
+                if e.code == 429:   
+                    model.is_exhausted = True
+                    print(f"Error 429 recieved. Now stopping the use of {model.name}.")
+                    return None
+                elif e.code == 503:
+                    print("Error for high demand recieved. WIll now wait 25 extra seconds between each try.")
+                    model.in_high_demand = True
+                    attempt += 1
+                else: 
+                    print(f"  API request failed (attempt {attempt + 1}/{max_retries}): {e}")
+                    attempt += 1
+            except RuntimeError as e:
+                # This catches invalid model IDs and other provider errors
+                print(f"  API request failed (attempt {attempt + 1}/{max_retries}): {e}")
+                attempt += 1
+            except Exception as e:
+                print(f"  API request failed (attempt {attempt + 1}/{max_retries}): {e}")
+                attempt += 1
+
+            if attempt < max_retries - 1:
+                if model.in_high_demand:
+                    time.sleep(25)
+                time.sleep(5)
+            else:
+                print(f"  Final API request failed. Response: {response.text if 'response' in locals() else 'No response'}")
+                errorFlag = True
+                    
+                attempt += 1
+            if errorFlag:
+                print(f'\n\n Batch nr {batch_n} of {n_batches} has not been processed. Moving on to next batch.\n\n')
+                failed_batches[(batchidx, n_batches)] = flyer_batch
                 return None
 
 
-            errorFlag = False
-            attempt = 0
-            while attempt < (max_retries):
-
-                model.n_calls += 1
-
-                try:
-                    response = client.models.generate_content(
-                    model=model.id,
-                    contents=[prompt,batch_image_list],
-                    config={'response_mime_type':"application/json",
-                            "response_schema": FlyerBatch.model_json_schema()}
-                    )
-                    
-                    #LLM formaterer alle deals inn i en key "flyers", så må hente faktisk respons fra den keyen her
-                    batch_deal_df = pd.DataFrame(json.loads(response.text)['flyers'])
-                    if not batch_deal_df.empty:
-                        batch_deal_df = batch_deal_df.rename(columns={"image_index":"page_number"})
-                        try:
-                            batch_deal_df.loc[batch_deal_df['category'] == 'eggs', 'unit'] = 'stk'
-                        except:
-                            pass
-                    print(f'\nDeals successfully extracted from batch nr. {batch_n} ({flyer_batch[0].store} | {flyer_batch[-1].store})')
-                    return batch_deal_df
-
-                except errors.APIError as e:
-                        if e.code == 429:   
-                            model.is_exhausted = True
-                            print(f"Error 429 recieved. Now stopping the use of {model.name}.")
-                            return None
-                        elif e.code == 503:
-                            print("Error for high demand recieved. WIll now wait 25 extra seconds between each try.")
-                            model.in_high_demand = True
-                            attempt += 1
-                        else: 
-                            print(f"  API request failed (attempt {attempt + 1}/{max_retries}): {e}")
-                            attempt += 1
-                except Exception as e:
-                    print(f"  API request failed (attempt {attempt + 1}/{max_retries}): {e}")
-                    attempt += 1
-
-                if attempt < max_retries - 1:
-                    if model.in_high_demand:
-                        time.sleep(25)
-                    time.sleep(5)
-                else:
-                    print(f"  Final API request failed. Response: {response.text if 'response' in locals() else 'No response'}")
-                    errorFlag = True
-                
-                    attempt += 1
-                if errorFlag:
-                    print(f'\n\n Batch nr {batch_n} of {n_batches} has not been processed. Moving on to next batch.\n\n')
-                    failed_batches[(batchidx, n_batches)] = flyer_batch
-                    return None
-                
-
-
-            return None
-
+        return None
     def process_all_flyers(batchsize=batchsize):
         """
         Main function to loop through all images, process them, and save the
