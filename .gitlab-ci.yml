@@ -29,5 +29,11 @@ weekly_job:
     
     - echo "Running weekly job with cached dependencies..."
     - python main.py
+  artifacts:
+    when: always
+    paths:
+      - temp_output/results_JSON
+      - "*.log"
+    expire_in: 1 week
   only:
     - schedules
