@@ -12,12 +12,13 @@ from google.genai import errors
 from PIL import Image
 from pydantic_models import FlyerBatch
 from openai import OpenAI
+import base64
 
 
 def encode_image_to_data_uri(image_path: str) -> str:
     """Reads an image file and returns a base64 data URI."""
     with open(image_path, "rb") as image_file:
-        encoded_string = Image.open(image_path).convert("RGB").tobytes()
+        encoded_string = image_file.read()
         b64 = base64.b64encode(encoded_string).decode("utf-8")
     return f"data:image/jpeg;base64,{b64}"
 
@@ -58,26 +59,20 @@ def model_api_call(
         raise ValueError(f"Unknown provider: {provider}. Must be 'google' or 'openai'.")
 
     # Build message content list
-    content = [{"type": "text", "text": prompt}]
-    for img_path in image_paths:
-        if provider == "openai":
-            content.append(
-                {
-                    "type": "image_url",
-                    "image_url": {"url": encode_image_to_data_uri(img_path)},
-                }
-            )
-        else:
-            content.append(Image.open(img_path))
-
-    if not content:
+    if not image_paths:
         raise ValueError("No content (prompt or images) provided.")
+
+    contents = []
+    contents.append({"text": prompt})
+    for img_path in image_paths:
+        with open(img_path, "rb") as f:
+            contents.append({"inline_data": {"mime_type": "image/jpeg", "data": base64.b64encode(f.read()).decode("utf-8")}})
 
     try:
         if provider == "google":
             response = client.models.generate_content(
                 model=model_id,
-                contents=content,
+                contents=contents,
                 config={"response_mime_type": response_mime_type,
                         "response_schema": response_format.model_json_schema()}
             )
@@ -85,7 +80,7 @@ def model_api_call(
         else:  # openai
             response = client.beta.chat.completions.parse(
                 model=model_id,
-                messages=[{"role": "user", "content": content}],
+                messages=[{"role": "user", "content": contents}],
                 response_format=response_format,
                 temperature=temperature,
             )
