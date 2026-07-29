@@ -21,8 +21,9 @@ class API_model():
 Gem25_flash = API_model('gemini-2.5-flash', 'Gemini Flash', 5, 20)
 Gem3_flash = API_model('gemini-3-flash-preview', 'Gemini 3 Flash', 5, 20)
 Gem35_flash = API_model('gemini-3.5-flash', "Gemini 3.5 Flash", 5, 20)
+Gem36_flash = API_model('gemini-3.6-flash', "Gemini 3.6 Flash", 5, 20)
 Gem31_flash_lite = API_model('gemini-3.1-flash-lite', 'Gemini 3.1 Flash Lite', 15, 500)
 #Gem_pro = API_model('pro', 'Gemini Pro', 2, 50)
 
-AI_models = [Gem35_flash, Gem3_flash, Gem31_flash_lite, Gem25_flash]
-front_page_model = Gem35_flash
+AI_models = [Gem36_flash, Gem35_flash, Gem3_flash, Gem31_flash_lite, Gem25_flash]
+front_page_model = Gem36_flash
