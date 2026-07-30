@@ -40,7 +40,7 @@ def updateWebsite():
     hostname = os.environ['FTP_HOST']
     port = 22
     username = os.environ['FTP_USER']
-    password = os.environ['DB_PASS']
+    password = os.environ['FTP_PASS']
     remote_basedir = os.environ['FTP_REMOTE_BASEDIR']
     
 
