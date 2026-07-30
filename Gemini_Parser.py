@@ -13,7 +13,7 @@ from PIL import Image
 from pydantic_models import FlyerBatch
 
 
-def Gemini_parser(BUTIKKER, AI_models, add_website_json=False, add_tmp_json=False, batchsize=None, prev_failed_batches=None):
+def Gemini_parser(BUTIKKER, AI_models, JSON_OUTPUT_FOLDER, add_website_json=False, add_tmp_json=False, batchsize=None, prev_failed_batches=None):
     '''Sends API calls to extract food items from grocery flyers'''
 
     all_deals = ['standard_deal', 'percentage_deal', 'bogo_deal']
@@ -31,8 +31,7 @@ def Gemini_parser(BUTIKKER, AI_models, add_website_json=False, add_tmp_json=Fals
     else:
         print("API_KEY is present (value hidden).")
 
-    IMAGE_INPUT_FOLDER = f"temp_output/bilder" 
-    JSON_OUTPUT_FOLDER = "temp_output/results_JSON"
+    IMAGE_INPUT_FOLDER = f"temp_output/bilder"
 
     try:
         os.mkdir(JSON_OUTPUT_FOLDER)
@@ -150,40 +149,9 @@ def Gemini_parser(BUTIKKER, AI_models, add_website_json=False, add_tmp_json=Fals
             def __repr__(self):
                 return f"({self.store}-{self.page_number})"
         
-        def is_dir_empty(path):
-            with os.scandir(path) as it:
-                return not any(it)
 
-        ALL_DEALS_DF = None
-        if add_website_json:
-
-            if not is_dir_empty(JSON_OUTPUT_FOLDER):
-                print("Cannot add website JSON to json_output_folder as there are already files there")
-                sys.exit()
-
-            json_url = "https://askhf.folk.ntnu.no/temp_JSON/"
-
-
-            response = requests.get(json_url)
-            soup = BeautifulSoup(response.text, 'html.parser')
-
-            for link in soup.find_all("a"):
-                href = link.get("href")
-                if href and href.endswith(".json"):
-                    file_url = json_url + href
-                    r = requests.get(file_url)
-                    with open(f'{JSON_OUTPUT_FOLDER}/{href}', "wb") as f:
-                        f.write(r.content)
-
-
-        
+        ALL_DEALS_DF = None        
         if add_tmp_json or add_website_json:
-            if not os.path.exists(JSON_OUTPUT_FOLDER):
-                print("Program is set to append json already present in JSON folder, but folder doesnt exist")
-                sys.exit()
-            elif is_dir_empty(JSON_OUTPUT_FOLDER):
-                print("Program is set to add json already present in JSON folder, but folder has no files!")
-                sys.exit()
 
             tmp_df_list = []
             for category in all_deals:

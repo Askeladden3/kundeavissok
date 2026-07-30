@@ -304,3 +304,38 @@ if __name__ == '__main__':
 
     URLs = fetch_etilbudsavis(BUTIKKER, dato)
     download_kundeaviser(dato, URLs)
+    
+    
+def fetch_preproccesed_JSON(JSON_OUTPUT_FOLDER, add_website_json=False, add_tmp_json=False):
+    
+    def is_dir_empty(path):
+        with os.scandir(path) as it:
+            return not any(it)
+
+    if add_website_json:
+
+        if not is_dir_empty(JSON_OUTPUT_FOLDER):
+            print("Cannot add website JSON to json_output_folder as there are already files there")
+            sys.exit()
+
+        json_url = "https://askhf.folk.ntnu.no/temp_JSON/"
+
+
+        response = requests.get(json_url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        for link in soup.find_all("a"):
+            href = link.get("href")
+            if href and href.endswith(".json"):
+                file_url = json_url + href
+                r = requests.get(file_url)
+                with open(f'{JSON_OUTPUT_FOLDER}/{href}', "wb") as f:
+                    f.write(r.content)
+
+    if add_tmp_json or add_website_json:
+        if not os.path.exists(JSON_OUTPUT_FOLDER):
+            print("Program is set to append json already present in JSON folder, but folder doesnt exist")
+            sys.exit()
+        elif is_dir_empty(JSON_OUTPUT_FOLDER):
+            print("Program is set to add json already present in JSON folder, but folder has no files!")
+            sys.exit()

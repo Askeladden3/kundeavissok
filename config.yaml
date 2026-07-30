@@ -1,6 +1,7 @@
 standard:
   test_mode: false
   BUTIKKER:  #['meny']
+  JSON_OUTPUT_FOLDER: "temp_output/results_JSON"
   download_kundeaviser: true
   skip_parsing: false
   batchsize: 17 #Hvis satt til None brukes automatisk algoritme, så kan være lettere hvis usikker på hva som er bra
@@ -10,10 +11,12 @@ standard:
   add_tmp_json: false
   saveFiles: true
   updateWebsite: true
+  
 
 custom:
   test_mode: false
   BUTIKKER: #['rema-1000', 'bunnpris']
+  JSON_OUTPUT_FOLDER: "temp_output/results_JSON"
   download_kundeaviser: false
   skip_parsing: true
   batchsize: 17 #Hvis satt til None brukes automatisk algoritme, så kan være lettere hvis usikker på hva som er bra
