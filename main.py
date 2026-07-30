@@ -43,11 +43,11 @@ def main(params):
             download_kundeaviser(dato, avisurls)
             
 
-    fetch_preproccesed_JSON(params['JSON_OUTPUT_FOLDER'], params['add_website_json'], params['add_tmp_json'])
+    fetch_preproccesed_JSON(params['JSON_OUTPUT_FOLDER'], params['add_website_JSON'], params['add_tmp_json'])
     
 
     if not params['skip_parsing']:
-        Gemini_parser(BUTIKKER, AI_models, params['JSON_OUTPUT_FOLDER'], params['batchsize'], params['prev_failed_batches'])
+        Gemini_parser(BUTIKKER, AI_models, params['JSON_OUTPUT_FOLDER'], params['add_website_JSON'], params['add_tmp_json'], params['batchsize'], params['prev_failed_batches'])
     nedlastede_butikker = JSONtoSQlite(params)
     create_frontend_files(uke, Alle_butikker, nedlastede_butikker)
 
