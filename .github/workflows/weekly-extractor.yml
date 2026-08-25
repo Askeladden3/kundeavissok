@@ -57,10 +57,17 @@ jobs:
           path: /var/cache/apt/archives
           key: ${{ runner.os }}-apt-firefox
 
-      - name: Install System Dependencies (Firefox & Geckodriver)
+      - name: Install System Dependencies for Firefox & Selenium Manager
         run: |
           apt-get update -yq
-          apt-get install -y firefox-esr geckodriver
+          apt-get install -y --no-install-recommends \
+            firefox-esr \
+            curl \
+            ca-certificates \
+            bzip2 \
+            libgtk-3-0 \
+            libdbus-glib-1-2 \
+            libxt6
 
       - name: Install Python Dependencies & Run Script
         run: |
