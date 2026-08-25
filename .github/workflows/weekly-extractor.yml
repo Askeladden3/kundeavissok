@@ -57,10 +57,10 @@ jobs:
           path: /var/cache/apt/archives
           key: ${{ runner.os }}-apt-firefox
 
-      - name: Install System Dependencies (Firefox)
+      - name: Install System Dependencies (Firefox & Geckodriver)
         run: |
           apt-get update -yq
-          apt-get install -y firefox-esr
+          apt-get install -y firefox-esr geckodriver
 
       - name: Install Python Dependencies & Run Script
         run: |
