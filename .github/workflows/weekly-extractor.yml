@@ -4,6 +4,15 @@ on:
   schedule:
     - cron: '0 6 * * 1'
   workflow_dispatch:
+    inputs:
+      cfg_type:
+        description: 'Select the configuration type'
+        required: true
+        default: 'main'
+        type: choice
+        options:
+          - main
+          - dev # Replace/add any secondary config options here
 
 jobs:
   weekly_job:
@@ -15,6 +24,8 @@ jobs:
 
     env:
       PYTHONUNBUFFERED: "1"
+      # Uses the manual trigger input if provided; falls back to "main" for scheduled runs
+      cfg_type: ${{ inputs.cfg_type || 'main' }}
       DB_HOST: ${{ secrets.DB_HOST }}
       DB_NAME: ${{ secrets.DB_NAME }}
       DB_PASS: ${{ secrets.DB_PASS }}
@@ -55,7 +66,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
-          echo "Running weekly job with cached dependencies..."
+          echo "Running job with cfg_type=$cfg_type..."
           python main.py
 
       - name: Save Artifacts
