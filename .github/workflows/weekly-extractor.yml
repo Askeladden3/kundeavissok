@@ -8,11 +8,11 @@ on:
       cfg_type:
         description: 'Select the configuration type'
         required: true
-        default: 'main'
+        default: 'standard'
         type: choice
         options:
-          - main
-          - dev # Replace/add any secondary config options here
+          - standard
+          - custom
 
 jobs:
   weekly_job:
@@ -25,7 +25,7 @@ jobs:
     env:
       PYTHONUNBUFFERED: "1"
       # Uses the manual trigger input if provided; falls back to "main" for scheduled runs
-      cfg_type: ${{ inputs.cfg_type || 'main' }}
+      cfg_type: ${{ inputs.cfg_type || 'standard' }}
       DB_HOST: ${{ secrets.DB_HOST }}
       DB_NAME: ${{ secrets.DB_NAME }}
       DB_PASS: ${{ secrets.DB_PASS }}
