@@ -1,0 +1,58 @@
+name: Weekly Grocery Extraction
+
+on:
+  schedule:
+    # Runs every Monday at 06:00 UTC (adjust time/day as needed)
+    - cron: '0 6 * * 1'
+  workflow_dispatch: # Allows manual triggering from the GitHub Actions UI
+
+jobs:
+  weekly_job:
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.12-slim
+
+    env:
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Built-in GitHub cache for pip dependencies
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # APT package caching for Firefox
+      - name: Cache APT packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-firefox
+
+      - name: Install System Dependencies (Firefox)
+        run: |
+          apt-get update -yq
+          apt-get install -y firefox-esr
+
+      - name: Install Python Dependencies & Run Script
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          echo "Running weekly job with cached dependencies..."
+          python main.py
+
+      - name: Save Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: extraction-results
+          path: |
+            temp_output/results_JSON
+            *.log
+          retention-days: 7
