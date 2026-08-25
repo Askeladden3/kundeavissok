@@ -2,24 +2,36 @@ name: Weekly Grocery Extraction
 
 on:
   schedule:
-    # Runs every Monday at 06:00 UTC (adjust time/day as needed)
     - cron: '0 6 * * 1'
-  workflow_dispatch: # Allows manual triggering from the GitHub Actions UI
+  workflow_dispatch:
 
 jobs:
   weekly_job:
     runs-on: ubuntu-latest
+    environment: main-deployment
+
     container:
       image: python:3.12-slim
 
     env:
       PYTHONUNBUFFERED: "1"
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_PASS: ${{ secrets.DB_PASS }}
+      DB_USER: ${{ secrets.DB_USER }}
+      FTP_HOST: ${{ secrets.FTP_HOST }}
+      FTP_PASS: ${{ secrets.FTP_PASS }}
+      FTP_REMOTE_BASEDIR: ${{ secrets.FTP_REMOTE_BASEDIR }}
+      FTP_USER: ${{ secrets.FTP_USER }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+      GIT_DEPLOY_USER: ${{ secrets.GIT_DEPLOY_USER }}
+      PASSWORD: ${{ secrets.PASSWORD }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Built-in GitHub cache for pip dependencies
       - name: Cache pip packages
         uses: actions/cache@v4
         with:
@@ -28,7 +40,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      # APT package caching for Firefox
       - name: Cache APT packages
         uses: actions/cache@v4
         with:
