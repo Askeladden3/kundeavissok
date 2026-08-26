@@ -21,10 +21,10 @@ jobs:
 
     container:
       image: python:3.12-slim
+      options: --shm-size=2gb
 
     env:
       PYTHONUNBUFFERED: "1"
-      # Uses the manual trigger input if provided; falls back to "main" for scheduled runs
       cfg_type: ${{ inputs.cfg_type || 'standard' }}
       DB_HOST: ${{ secrets.DB_HOST }}
       DB_NAME: ${{ secrets.DB_NAME }}
@@ -69,12 +69,32 @@ jobs:
             libdbus-glib-1-2 \
             libxt6
 
+      - name: Debug environment
+        run: |
+          echo "HOME is: $HOME"
+          echo "Whoami: $(whoami)"
+          echo "id: $(id)"
+          echo "Firefox version:"
+          firefox --version || echo "firefox not found on PATH"
+          echo "Contents of \$HOME:"
+          ls -la "$HOME" || echo "cannot list HOME"
+          echo "Selenium cache dir (if it exists):"
+          ls -la "$HOME/.cache/selenium" 2>/dev/null || echo "no selenium cache dir yet"
+          echo "/dev/shm size:"
+          df -h /dev/shm
+
       - name: Install Python Dependencies & Run Script
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
           echo "Running job with cfg_type=$cfg_type..."
           python main.py
+
+      - name: Debug Selenium cache after run
+        if: always()
+        run: |
+          echo "Selenium cache dir after run:"
+          ls -la "$HOME/.cache/selenium" 2>/dev/null || echo "still no selenium cache dir — Selenium Manager likely never ran or failed silently"
 
       - name: Save Artifacts
         if: always()
