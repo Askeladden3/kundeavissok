@@ -11,6 +11,8 @@ from bs4 import BeautifulSoup
 from pydantic_models import chosen_urls
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service
+import subprocess
 from PIL import Image
 from google.genai import types
 from google import genai
@@ -126,7 +128,9 @@ def fetch_etilbudsavis(BUTIKKER, dato):
     for helgetilbud in BUTIKKER:
         count = 0
         try:
-            driver = webdriver.Firefox(options=options)
+            
+            service = Service(log_output=subprocess.STDOUT)
+            driver = webdriver.Firefox(options=options, service=service)
             driver.get("https://etilbudsavis.no")
 
             driver.add_cookie({
