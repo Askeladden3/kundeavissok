@@ -21,10 +21,12 @@ jobs:
 
     container:
       image: python:3.12-slim
-      options: --shm-size=2gb
+      options: --shm-size=2gb --security-opt seccomp=unconfined
 
     env:
       PYTHONUNBUFFERED: "1"
+      HOME: "/root"
+      MOZ_DISABLE_CONTENT_SANDBOX: "1"
       cfg_type: ${{ inputs.cfg_type || 'standard' }}
       DB_HOST: ${{ secrets.DB_HOST }}
       DB_NAME: ${{ secrets.DB_NAME }}
