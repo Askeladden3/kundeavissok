@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 import pandas as pd
-from sqlalchemy import create_engine, Integer, String, Float, text
+from sqlalchemy import create_engine, Integer, String, Float, text, URL
 
 
 def JSONtoSQlite(cfg):
@@ -49,7 +49,17 @@ def JSONtoSQlite(cfg):
     HOST = os.environ['DB_HOST']
     PORT = '3306'
     DATABASE = os.environ['DB_NAME']
-    engine = create_engine(f"mysql+pymysql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}?charset=utf8mb4")
+    
+    url = URL.create(
+    drivername="mysql+pymysql",
+    username=os.environ['DB_USER'],
+    password=os.environ['DB_PASS'],
+    host=os.environ['DB_HOST'],
+    port=3306,
+    database=os.environ['DB_NAME'],
+    query={"charset": "utf8mb4"},
+    )
+    engine = create_engine(url)
 
     for entry in os.scandir(JSON_dirpath):
         if entry.is_file():
