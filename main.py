@@ -1,6 +1,6 @@
 
 from Gemini_Parser import Gemini_parser
-from fromJSONtoSQlite import JSONtoSQlite
+from fromJSONtoSQL import JSONtoPostgres
 from kundeavis_fetch import download_kundeaviser, fetch_etilbudsavis, fetch_preproccesed_JSON
 import datetime
 import json
@@ -48,7 +48,7 @@ def main(params):
 
     if not params['skip_parsing']:
         Gemini_parser(BUTIKKER, AI_models, params['JSON_OUTPUT_FOLDER'], params['add_website_JSON'], params['add_tmp_json'], params['batchsize'], params['prev_failed_batches'])
-    nedlastede_butikker = JSONtoSQlite(params)
+    nedlastede_butikker = JSONtoPostgres(params)
     create_frontend_files(uke, Alle_butikker, nedlastede_butikker)
 
     if params['test_mode']:
