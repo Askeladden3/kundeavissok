@@ -82,17 +82,17 @@ def JSONtoSQlite(cfg):
                 data['protein_type'] = data['protein_type'].map(protein_dict)
 
 
+            if not cfg['append_SQL']:
+                with engine.connect() as conn:
+                    conn.execute(text(f"TRUNCATE TABLE '{table_name}'"))
+            
             data.to_sql(name=table_name,
                     con=engine,
                     index=False,
-                    if_exists= 'append' if cfg['append_SQL'] else 'replace',
+                    if_exists= 'append',
                     dtype=db_types[deal_type])
             
-            if not cfg['append_SQL']:
-                with engine.connect() as conn:
-                    conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN id INT AUTO_INCREMENT PRIMARY KEY FIRST;"))
-                    conn.execute(text(f"ALTER TABLE {table_name} ADD FULLTEXT(name);"))
-                    conn.commit()
+
             
             stores = set(data['store'])
             unique_stores = unique_stores.union(stores)
