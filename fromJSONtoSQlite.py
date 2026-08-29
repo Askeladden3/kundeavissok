@@ -44,18 +44,13 @@ def JSONtoSQlite(cfg):
 
 
     unique_stores = set()
-    USER = os.environ['DB_USER']
-    PASSWORD = os.environ['DB_PASS']
-    HOST = os.environ['DB_HOST']
-    PORT = '3306'
-    DATABASE = os.environ['DB_NAME']
-    
+
     url = URL.create(
     drivername="mysql+pymysql",
     username=os.environ['DB_USER'],
     password=os.environ['DB_PASS'],
     host=os.environ['DB_HOST'],
-    port=3306,
+    port=os.environ['DB_PORT'],
     database=os.environ['DB_NAME'],
     query={"charset": "utf8mb4"},
     )
