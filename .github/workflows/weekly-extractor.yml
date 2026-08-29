@@ -32,6 +32,8 @@ jobs:
       DB_NAME: ${{ secrets.DB_NAME }}
       DB_PASS: ${{ secrets.DB_PASS }}
       DB_USER: ${{ secrets.DB_USER }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      CA_CERT: ${{ secrets.CA_CERT }}
       FTP_HOST: ${{ secrets.FTP_HOST }}
       FTP_PASS: ${{ secrets.FTP_PASS }}
       FTP_REMOTE_BASEDIR: ${{ secrets.FTP_REMOTE_BASEDIR }}
