@@ -2,9 +2,17 @@ import os
 from datetime import datetime
 import pandas as pd
 from sqlalchemy import create_engine, Integer, String, Float, text, URL
+import ssl
+
+
 
 
 def JSONtoSQlite(cfg):
+
+    ca_cert_str = os.environ["CA_CERT"]
+
+    ctx = ssl.create_default_context()
+    ctx.load_verify_locations(cadata=ca_cert_str)
 
 
     default_column_types = {
