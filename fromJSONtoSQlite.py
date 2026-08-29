@@ -62,6 +62,7 @@ def JSONtoSQlite(cfg):
     database=os.environ['DB_NAME'],
     query={"charset": "utf8mb4"},
     )
+    print(f"Connecting to host: {os.environ['DB_HOST']!r}")
     engine = create_engine(url)
 
     for entry in os.scandir(JSON_dirpath):
