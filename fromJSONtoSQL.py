@@ -41,7 +41,7 @@ def JSONtoPostgres(cfg):
     }
 
     protein_dict = {None: None, "beef": "Ku", "pork": "Svin", "poultry": "Kylling", "lamb": "Lam", "mixed": "Blandet", "plant_based": "Plante-basert"}
-    JSON_dirpath = f'json'
+    JSON_dirpath = f'temp_output/results_JSON'
 
     unique_stores = set()
 
