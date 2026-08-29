@@ -8,5 +8,5 @@ google-genai
 PyYAML
 pandas
 Pillow
-pymysql
+psycopg2-binary
 sqlalchemy

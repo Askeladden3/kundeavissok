@@ -1,2 +1,4 @@
 temp_output/
 .venv
+.env
+test.py

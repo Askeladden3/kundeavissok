@@ -1,31 +1,24 @@
 import os
 from datetime import datetime
 import pandas as pd
-from sqlalchemy import create_engine, Integer, String, Float, text, URL
-import ssl
+from sqlalchemy import create_engine, Integer, String, Float, text
+import yaml
 
 
-
-
-def JSONtoSQlite(cfg):
-
-    ca_cert_str = os.environ["CA_CERT"]
-
-    ctx = ssl.create_default_context()
-    ctx.load_verify_locations(cadata=ca_cert_str)
+def JSONtoPostgres(cfg):
 
 
     default_column_types = {
-    'name': String(355),
-    'brand': String(100),
-    'total_mass': Float(),
-    'unit': String(30),
-    'store': String(30),
-    'brand': String(50),
-    'category': String(50),
-    'protein_type': String(25),
-    'AI_model_used': String(100),
-    'page_number': Integer()
+        'name': String(355),
+        'brand': String(100),
+        'total_mass': Float(),
+        'unit': String(30),
+        'store': String(30),
+        'brand': String(50),
+        'category': String(50),
+        'protein_type': String(25),
+        'AI_model_used': String(100),
+        'page_number': Integer()
     }
 
     percentage_deal_types = {
@@ -42,28 +35,17 @@ def JSONtoSQlite(cfg):
     } | default_column_types
 
     db_types = {
-        'standard_deal' : standard_deal_types,
+        'standard_deal': standard_deal_types,
         'percentage_deal': percentage_deal_types,
-        'bogo_deal' : bogo_deal_types
+        'bogo_deal': bogo_deal_types
     }
 
-    protein_dict = {None:None, "beef" : "Ku", "pork" : "Svin", "poultry": "Kylling", "lamb" : "Lam", "mixed": "Blandet", "plant_based": "Plante-basert"}
-    JSON_dirpath = f'temp_output/results_JSON'
-
+    protein_dict = {None: None, "beef": "Ku", "pork": "Svin", "poultry": "Kylling", "lamb": "Lam", "mixed": "Blandet", "plant_based": "Plante-basert"}
+    JSON_dirpath = f'json'
 
     unique_stores = set()
 
-    url = URL.create(
-    drivername="mysql+pymysql",
-    username=os.environ['DB_USER'],
-    password=os.environ['DB_PASS'],
-    host=os.environ['DB_HOST'],
-    port=os.environ['DB_PORT'],
-    database=os.environ['DB_NAME'],
-    query={"charset": "utf8mb4"},
-    )
-
-    engine = create_engine(url)
+    engine = create_engine(os.environ["DB_URL"])
 
     for entry in os.scandir(JSON_dirpath):
         if entry.is_file():
@@ -77,7 +59,7 @@ def JSONtoSQlite(cfg):
 
             if data.empty:
                 with engine.connect() as conn:
-                    conn.execute(text(f'TRUNCATE TABLE {table_name};'))
+                    conn.execute(text(f'TRUNCATE TABLE "{table_name}";'))
                     conn.commit()
                     continue
 
@@ -85,29 +67,30 @@ def JSONtoSQlite(cfg):
             if 'protein_type' in data.columns:
                 data['protein_type'] = data['protein_type'].map(protein_dict)
 
-
             if not cfg['append_SQL']:
                 with engine.connect() as conn:
-                    conn.execute(text(f"TRUNCATE TABLE `{table_name}`"))
-            
-            data.to_sql(name=table_name,
-                    con=engine,
-                    index=False,
-                    if_exists= 'append',
-                    dtype=db_types[deal_type])
-            
+                    conn.execute(text(f'TRUNCATE TABLE "{table_name}"'))
+                    conn.commit()
 
-            
+            data.to_sql(name=table_name,
+                        con=engine,
+                        index=False,
+                        if_exists='append',
+                        dtype=db_types[deal_type])
+
             stores = set(data['store'])
             unique_stores = unique_stores.union(stores)
-            
 
     return unique_stores
 
+
 if __name__ == '__main__':
+    
+    with open('config.yaml', 'r') as fil:
+        cfg = yaml.safe_load(fil)
     current_date = datetime.now()
     år = current_date.year
     uke = current_date.date().isocalendar()[1]
     dato = [current_date, år, uke]
 
-    JSONtoSQlite(dato)
+    JSONtoPostgres(cfg['standard'])
